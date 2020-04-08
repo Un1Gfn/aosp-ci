@@ -24,6 +24,13 @@ jobs:
     steps:
 
       - run:
+          name: Prepare docker
+          command: |
+            sudo -i docker images
+            sudo -i docker pull archlinux:20200306
+            sudo -i docker images
+
+      - run:
           name: Stop for SSH
           command: |
             echo
@@ -34,14 +41,6 @@ jobs:
               echo "$i min"
             done
             /usr/bin/false
-
-      - run:
-          name: Docker
-          command: |
-            docker images
-            docker pull archlinux:20200306
-            docker images
-            docker run archlinux:20200306
 
       # All the hassle that ...
       # ... needed deps are not removed and installed again
