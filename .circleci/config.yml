@@ -10,14 +10,16 @@ jobs:
 
   build:
 
+    # Xenial Xerus
     machine:
-      resource_class: gpu.nvidia.small
-      image: ubuntu-1604-cuda-10.1:201909-23
+      image: ubuntu-1604:201903-01
+      docker_layer_caching: false
 
     # https://hub.docker.com/_/archlinux/?tab=tags
     # docker:
     #   - image: archlinux:20200306
-    # resource_class: medium
+
+    resource_class: medium
 
     steps:
 
@@ -32,6 +34,14 @@ jobs:
               echo "$i min"
             done
             /usr/bin/false
+
+      - run:
+          name: Docker
+          command: |
+            docker images
+            docker pull archlinux:20200306
+            docker images
+            docker run archlinux:20200306
 
       # All the hassle that ...
       # ... needed deps are not removed and installed again
