@@ -20,24 +20,27 @@ jobs:
 
     steps:
 
-
       - run:
           name: "[M] chpasswd"
           command: |
             echo "root:1" | sudo chpasswd
 
+      # https://hub.docker.com/_/archlinux/?tab=tags
+      # https://stackoverflow.com/questions/28574433/do-docker-containers-retain-file-changes
+      # https://stackoverflow.com/questions/2935183/bash-infinite-sleep-infinite-blocking
       - run:
           name: "[M] BASH_ENV"
-          # https://circleci.com/docs/2.0/env-vars/#using-bash_env-to-set-environment-variables
           command: |
             cat <<EOF >>"$BASH_ENV"
             export img="archlinux:20200407"
+            export container="arch"
             # docker run --privileged
-            export docker_run="sudo -i docker run -i --memory 6.5G --memory-swap 6.5G --rm -u 0:0 -v vol:/data \$img /bin/bash -eo pipefail"
-            export docker_it="sudo -i docker run -it --memory 6.5G --memory-swap 6.5G --rm -u 0:0 -v vol:/data \$img /bin/bash"
+            export docker_run="sudo -i docker run -d --memory 7G --memory-swap 7G --name \$container -u 0:0 \$img /bin/sleep 1d"
+            export docker_exec="sudo -i docker exec -i \$container /bin/bash -eo pipefail"
+            export docker_it="sudo -i docker exec -it \$container /bin/bash -eo pipefail"
+            export docker_cp="sudo -i docker cp"
             EOF
 
-      # https://hub.docker.com/_/archlinux/?tab=tags
       - run:
           name: "[M] Prepare docker"
           command: |
@@ -45,51 +48,52 @@ jobs:
             sudo -i docker pull "$img"
             sudo -i docker images
             # sudo -i docker rm $(docker ps -a -q)
-            sudo -i docker volume create vol
-            sudo -i docker volume ls
+            $docker_run
 
-      # https://forums.docker.com/t/run-command-in-stopped-container/343/11
       - run:
           name: "[D] check pacman"
           command: |
-            cat <<EOF | $docker_run
+            cat <<EOF | $docker_exec
             pacman --version
             EOF
 
       - run:
           name: "[D] gen file"
           command: |
-            cat <<EOF | $docker_run
-            cd /data
-            ls garbage || true
-            echo "$RANDOM $RANDOM $RANDOM" >garbage
-            cat garbage
+            cat <<EOF | $docker_exec
+            ls /garbage || true
+            echo "$RANDOM $RANDOM $RANDOM" >/garbage
+            cat /garbage
             EOF
 
       - run:
-          name: "[D] show file (persistant)"
+          name: "[D] show file"
           command: |
-            cat <<EOF | $docker_run
-            cd /data
-            cat garbage
+            cat <<EOF | $docker_exec
+            cat /garbage
             EOF
 
       - run:
-          name: "[M] Stop"
+          name: "[M] steal file"
           command: |
-            /usr/bin/false
+            $docker_cp $container:/garbage /garbage_artifact
 
-      - run:
-          name: "[M] Wait for SSH"
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
+      # - run:
+      #     name: "[M] Stop"
+      #     command: |
+      #       /usr/bin/false
+
+      # - run:
+      #     name: "[M] Wait for SSH"
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
 
       # - run:
       #     name: "[D] steal file"
@@ -100,68 +104,68 @@ jobs:
       # ... uneeded deps are not upgraded before removed
 
       # udpate -> unreg||true -> partial -> gc||true -> upgrade
-      - run:
-          name: BASH_ENV
-          # https://circleci.com/docs/2.0/env-vars/#using-bash_env-to-set-environment-variables
-          command: |
-            cat <<EOF >>"$BASH_ENV"
-            export update="pacman -Syy --noprogressbar"
-            export unreg="pacman -D --asdeps"
-            export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skil ver chk
-            export gc="pacman -Rssc --noprogressbar --noconfirm \$(pacman -Qdttq)"
-            export upgrade="pacman -Suu --noprogressbar --noconfirm"
-            ###
-            export PG_ROLE="postgres"
-            export EXP="exp02"
-            export EXP_DIR="/root/project/\$EXP"
-            export PROJ_DIR="/root/project"
-            export CONNINFO="postgresql://localhost:5432"
-            export psql_manage="psql -d \$CONNINFO/postgres --user=\$PG_ROLE"
-            export psql_benchmarksql="psql -d \$CONNINFO/benchmarksql --user=\$PG_ROLE"
-            # https://wiki.archlinux.org/index.php/Java#Tips_and_tricks
-            export _JAVA_OPTIONS="-Xmx3072M"
-            EOF
-            source "$BASH_ENV"
+      # - run:
+      #     name: BASH_ENV
+      #     # https://circleci.com/docs/2.0/env-vars/#using-bash_env-to-set-environment-variables
+      #     command: |
+      #       cat <<EOF >>"$BASH_ENV"
+      #       export update="pacman -Syy --noprogressbar"
+      #       export unreg="pacman -D --asdeps"
+      #       export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skil ver chk
+      #       export gc="pacman -Rssc --noprogressbar --noconfirm \$(pacman -Qdttq)"
+      #       export upgrade="pacman -Suu --noprogressbar --noconfirm"
+      #       ###
+      #       export PG_ROLE="postgres"
+      #       export EXP="exp02"
+      #       export EXP_DIR="/root/project/\$EXP"
+      #       export PROJ_DIR="/root/project"
+      #       export CONNINFO="postgresql://localhost:5432"
+      #       export psql_manage="psql -d \$CONNINFO/postgres --user=\$PG_ROLE"
+      #       export psql_benchmarksql="psql -d \$CONNINFO/benchmarksql --user=\$PG_ROLE"
+      #       # https://wiki.archlinux.org/index.php/Java#Tips_and_tricks
+      #       export _JAVA_OPTIONS="-Xmx3072M"
+      #       EOF
+      #       source "$BASH_ENV"
 
-      - run:
-          name: Pacman
-          command: |
-            $update
-            cat <<"---" | xargs $unreg || true
-              llvm-libs
-              gcc-libs
-              pcre
-              gpm
-              libpng
-              avahi
-            ---
-            cat <<"---" | xargs $partial
-              git rxvt-unicode-terminfo openssh nmap
-              wget tree nano vim pv xz unzip lsof pciutils tmux
-              postgresql-libs
-              jdk7-openjdk
-            ---
-            echo
-            $gc || true
-            echo
-            $upgrade
+      # - run:
+      #     name: Pacman
+      #     command: |
+      #       $update
+      #       cat <<"---" | xargs $unreg || true
+      #         llvm-libs
+      #         gcc-libs
+      #         pcre
+      #         gpm
+      #         libpng
+      #         avahi
+      #       ---
+      #       cat <<"---" | xargs $partial
+      #         git rxvt-unicode-terminfo openssh nmap
+      #         wget tree nano vim pv xz unzip lsof pciutils tmux
+      #         postgresql-libs
+      #         jdk7-openjdk
+      #       ---
+      #       echo
+      #       $gc || true
+      #       echo
+      #       $upgrade
 
-      - run:
-          name: Hardware info
-          command: |
-            pwd
-            echo "$(nproc) $(nproc --all)" | tee /nproc
-            lspci &>/lspci
-            tee </proc/cpuinfo /cpuinfo
+      # - run:
+      #     name: Hardware info
+      #     command: |
+      #       pwd
+      #       echo "$(nproc) $(nproc --all)" | tee /nproc
+      #       lspci &>/lspci
+      #       tee </proc/cpuinfo /cpuinfo
 
-      - run:
-          name: Verify J*7
-          command: |
-            archlinux-java status
-            echo
-            java -version
-            echo
-            java -version |& grep -F 1.7 >/dev/null
+      # - run:
+      #     name: Verify J*7
+      #     command: |
+      #       archlinux-java status
+      #       echo
+      #       java -version
+      #       echo
+      #       java -version |& grep -F 1.7 >/dev/null
 
       # - checkout # github -> /root/project
 
@@ -172,11 +176,5 @@ jobs:
       #     path: /lspci
       # - store_artifacts:
       #     path: /cpuinfo
-      # - store_artifacts:
-      #     path: /sql_benchmarksql.log
-      # - store_artifacts:
-      #     path: /sql_schema.out
-      # - store_artifacts:
-      #     path: /sql_benchmarksql.out
-      # - store_artifacts:
-      #     path: /sql_benchmarksql.out.xz
+      - store_artifacts:
+          path: /garbage_artifact

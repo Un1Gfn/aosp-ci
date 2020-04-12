@@ -16,10 +16,6 @@ CircleCI
 * CLI reference
   * [docker pull](https://docs.docker.com/engine/reference/commandline/pull/)
   * [docker run](https://docs.docker.com/engine/reference/commandline/run/)
-  * [docker rm](https://docs.docker.com/engine/reference/commandline/rm/)
-  * [docker ps](https://docs.docker.com/engine/reference/commandline/ps/)
-  * [docker attach](https://docs.docker.com/engine/reference/commandline/attach/)
-  * [docker start](https://docs.docker.com/engine/reference/commandline/start/)
   * [docker exec](https://docs.docker.com/engine/reference/commandline/exec/)
 
 [Build LineageOS for angler](https://wiki.lineageos.org/devices/angler/build)
@@ -32,22 +28,6 @@ Android sparse image
   * [simg-tools](https://aur.archlinux.org/packages/simg-tools/)
   * [lineage wiki](https://wiki.lineageos.org/extracting_blobs_from_zips.html)
   * [aosp guide](https://source.android.com/devices/bootloader/partitions-images)
-
-Bring up docker
-```bash
-echo "root:1"|sudo chpasswd
-su -
-
-docker run -it -m 6.5G --name test archlinux:20200407
-docker rm test
-docker ps -a
-
-docker start test
-docker attach test
-
-docker exec -ti archlinux:20200407 bash
-docker exec -ti archlinux:20200407 bash
-```
 
 Check container capabilities
 ```bash
