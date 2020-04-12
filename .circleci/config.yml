@@ -29,6 +29,29 @@ jobs:
             sudo -i docker images
 
       - run:
+          name: "[D] check pacman"
+          command: |
+            cat <<EOF | sudo -i docker run -i -m 6.5G archlinux:20200407 /bin/bash -eo pipefail
+            pacman --version
+            EOF
+
+      - run:
+          name: "[D] gen file"
+          command: |
+            cat <<EOF | sudo -i docker run -i -m 6.5G archlinux:20200407 /bin/bash -eo pipefail
+            ls /garbage || true
+            echo "$RANDOM $RANDOM $RANDOM" >/garbage
+            cat /garbage
+            EOF
+
+      - run:
+          name: "[D] show file (not preserved, fail)"
+          command: |
+            cat <<EOF | sudo -i docker run -i -m 6.5G archlinux:20200407 /bin/bash -eo pipefail
+            cat /garbage
+            EOF
+
+      - run:
           name: "[M] Stop for SSH"
           command: |
             echo
@@ -40,13 +63,9 @@ jobs:
             done
             /usr/bin/false
 
-      - run:
-          name: "[D] check pacman"
-          command: |
-            cat <<EOF | sudo -i docker run -i -m 6.5G archlinux:20200407 /bin/bash -eo pipefail
-            pacman --version
-            EOF
-
+      # - run:
+      #     name: "[D] steal file"
+      #     command: |
 
       # All the hassle that ...
       # ... needed deps are not removed and installed again
