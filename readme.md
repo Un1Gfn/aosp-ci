@@ -38,15 +38,15 @@ Bring up docker
 echo "root:1"|sudo chpasswd
 su -
 
-docker run -it -m 6.5G --name test archlinux:20200306
+docker run -it -m 6.5G --name test archlinux:20200407
 docker rm test
 docker ps -a
 
 docker start test
 docker attach test
 
-docker exec -ti archlinux:20200306 bash
-docker exec -ti archlinux:20200306 bash
+docker exec -ti archlinux:20200407 bash
+docker exec -ti archlinux:20200407 bash
 ```
 
 Check container capabilities

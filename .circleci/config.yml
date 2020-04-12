@@ -43,7 +43,7 @@ jobs:
       - run:
           name: "[D] check pacman"
           command: |
-            cat <<EOF | docker exec /bin/bash -eo pipefail
+            cat <<EOF | sudo -i docker run -i -m 6.5G archlinux:20200407 /bin/bash -eo pipefail
             pacman --version
             EOF
 
