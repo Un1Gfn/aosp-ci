@@ -25,21 +25,35 @@ jobs:
           command: |
             echo "root:1" | sudo chpasswd
 
+      - run:
+          name: "[M] Hardware info"
+          command: |
+            pwd
+            echo "$(nproc) $(nproc --all)" | tee /m_nproc
+            tee </proc/cpuinfo /m_cpuinfo
+
       # https://hub.docker.com/_/archlinux/?tab=tags
       # https://stackoverflow.com/questions/28574433/do-docker-containers-retain-file-changes
       # https://stackoverflow.com/questions/2935183/bash-infinite-sleep-infinite-blocking
       - run:
           name: "[M] BASH_ENV"
           command: |
-            cat <<EOF >>"$BASH_ENV"
+            cat <<"EOF" >>"$BASH_ENV"
+            # 
             export img="archlinux:20200407"
             export container="arch"
-            # docker run --privileged
-            export docker_run="sudo -i docker run -d --memory 7G --memory-swap 7G --name \$container -u 0:0 \$img /bin/sleep 1d"
-            export docker_exec="sudo -i docker exec -i \$container /bin/bash -eo pipefail"
-            export docker_it="sudo -i docker exec -it \$container /bin/bash -eo pipefail"
+            #
+            export BASH_ENV_DOCKER="/etc/profile.d/ciecleci.sh"
+            export RAM=7168M
+            export docker_run="sudo -i docker run -d --memory $RAM --memory-swap $RAM --name $container -u 0:0 $img /bin/sleep 1d"
+            export docker_exec="sudo -i docker exec -i $container"
+            export docker_bash="$docker_exec /bin/bash -eo pipefail"
+            export docker_it="sudo -i docker exec -it $container /bin/bash -eo pipefail"
             export docker_cp="sudo -i docker cp"
+            #
+            export PROJ_DIR="/root/project"
             EOF
+            source "$BASH_ENV"
 
       - run:
           name: "[M] Prepare docker"
@@ -49,34 +63,6 @@ jobs:
             sudo -i docker images
             # sudo -i docker rm $(docker ps -a -q)
             $docker_run
-
-      - run:
-          name: "[D] check pacman"
-          command: |
-            cat <<EOF | $docker_exec
-            pacman --version
-            EOF
-
-      - run:
-          name: "[D] gen file"
-          command: |
-            cat <<EOF | $docker_exec
-            ls /garbage || true
-            echo "$RANDOM $RANDOM $RANDOM" >/garbage
-            cat /garbage
-            EOF
-
-      - run:
-          name: "[D] show file"
-          command: |
-            cat <<EOF | $docker_exec
-            cat /garbage
-            EOF
-
-      - run:
-          name: "[M] steal file"
-          command: |
-            $docker_cp $container:/garbage /garbage_artifact
 
       # - run:
       #     name: "[M] Stop"
@@ -95,86 +81,90 @@ jobs:
       #       done
       #       /usr/bin/false
 
-      # - run:
-      #     name: "[D] steal file"
-      #     command: |
-
       # All the hassle that ...
       # ... needed deps are not removed and installed again
       # ... uneeded deps are not upgraded before removed
 
-      # udpate -> unreg||true -> partial -> gc||true -> upgrade
+      # Misleading
       # - run:
-      #     name: BASH_ENV
+      #     name: "[M] copy BASH_ENV to container"
       #     # https://circleci.com/docs/2.0/env-vars/#using-bash_env-to-set-environment-variables
       #     command: |
-      #       cat <<EOF >>"$BASH_ENV"
-      #       export update="pacman -Syy --noprogressbar"
-      #       export unreg="pacman -D --asdeps"
-      #       export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skil ver chk
-      #       export gc="pacman -Rssc --noprogressbar --noconfirm \$(pacman -Qdttq)"
-      #       export upgrade="pacman -Suu --noprogressbar --noconfirm"
-      #       ###
-      #       export PG_ROLE="postgres"
-      #       export EXP="exp02"
-      #       export EXP_DIR="/root/project/\$EXP"
-      #       export PROJ_DIR="/root/project"
-      #       export CONNINFO="postgresql://localhost:5432"
-      #       export psql_manage="psql -d \$CONNINFO/postgres --user=\$PG_ROLE"
-      #       export psql_benchmarksql="psql -d \$CONNINFO/benchmarksql --user=\$PG_ROLE"
-      #       # https://wiki.archlinux.org/index.php/Java#Tips_and_tricks
-      #       export _JAVA_OPTIONS="-Xmx3072M"
-      #       EOF
-      #       source "$BASH_ENV"
+      #       $docker_cp "$BASH_ENV" "$container":/etc/profile.d/circleci.sh
 
-      # - run:
-      #     name: Pacman
-      #     command: |
-      #       $update
-      #       cat <<"---" | xargs $unreg || true
-      #         llvm-libs
-      #         gcc-libs
-      #         pcre
-      #         gpm
-      #         libpng
-      #         avahi
-      #       ---
-      #       cat <<"---" | xargs $partial
-      #         git rxvt-unicode-terminfo openssh nmap
-      #         wget tree nano vim pv xz unzip lsof pciutils tmux
-      #         postgresql-libs
-      #         jdk7-openjdk
-      #       ---
-      #       echo
-      #       $gc || true
-      #       echo
-      #       $upgrade
+      - run:
+          name: "[D] Hardware info"
+          command: |
+            cat <<"EOF" | $docker_bash
+            echo "$(nproc) $(nproc --all)" | tee /nproc
+            tee </proc/cpuinfo /cpuinfo
+            EOF
 
-      # - run:
-      #     name: Hardware info
-      #     command: |
-      #       pwd
-      #       echo "$(nproc) $(nproc --all)" | tee /nproc
-      #       lspci &>/lspci
-      #       tee </proc/cpuinfo /cpuinfo
+      - run:
+          name: "[D] rc"
+            $docker_exec rm -fv "BASH_ENV_DOCKER"
+            echo "export RAM=$RAM" | $docker_exec tee "$BASH_ENV_DOCKER"
+            cat <<"EOF" | $docker_exec tee "$BASH_ENV_DOCKER"
+            export _JAVA_OPTIONS="-Xmx$RAM"
+            export  update="pacman -Syy --noprogressbar"
+            export   unreg="pacman -D --asdeps"
+            export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skip ver chk only
+            export      gc="pacman -Rssc --noprogressbar --noconfirm $(pacman -Qdttq)"
+            export upgrade="pacman -Suu --noprogressbar --noconfirm"
+            EOF
 
-      # - run:
-      #     name: Verify J*7
-      #     command: |
-      #       archlinux-java status
-      #       echo
-      #       java -version
-      #       echo
-      #       java -version |& grep -F 1.7 >/dev/null
+      # udpate -> unreg||true -> partial -> gc||true -> upgrade
+      - run:
+          name: "[D] Pacman"
+          command: |
+            $docker_bash $update
+            cat <<EOF | $docker_bash
+            cat <<"---" | xargs \$unreg || true
+              llvm-libs
+              gcc-libs
+              pcre
+              gpm
+              libpng
+              avahi
+            ---
+            cat <<"---" | xargs \$partial
+              git rxvt-unicode-terminfo openssh nmap
+              wget tree nano vim pv xz unzip lsof pciutils tmux
+              postgresql-libs
+              jdk7-openjdk
+            ---
+            echo
+            \$gc || true
+            echo
+            \$upgrade
+            EOF
+
+      - run:
+          name: Verify J*7
+          command: |
+            cat <<EOF | $docker_bash
+            archlinux-java status
+            echo
+            java -version
+            echo
+            java -version |& grep -F 1.7 >/dev/null
+            EOF
 
       # - checkout # github -> /root/project
 
+      - run:
+          name: "[M] steal file"
+          command: |
+            $docker_cp $container:/garbage /garbage_artifact
+
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
-      # - store_artifacts:
-      #     path: /nproc
-      # - store_artifacts:
-      #     path: /lspci
-      # - store_artifacts:
-      #     path: /cpuinfo
+      - store_artifacts:
+          path: /d_nproc
+      - store_artifacts:
+          path: /d_cpuinfo
+      - store_artifacts:
+          path: /m_nproc
+      - store_artifacts:
+          path: /m_cpuinfo
       - store_artifacts:
           path: /garbage_artifact

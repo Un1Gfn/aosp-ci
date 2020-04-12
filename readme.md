@@ -37,15 +37,6 @@ ls -Al /
 df -h
 ```
 
-BASH_ENV
-```bash
-export update="pacman -Syy --noprogressbar"
-export unreg="pacman -D --asdeps"
-export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skips verion check only
-export gc="pacman -Rssc --noprogressbar --noconfirm \$(pacman -Qdttq)"
-export upgrade="pacman -Suu --noprogressbar --noconfirm"
-```
-
 Pacman
 ```bash
 
