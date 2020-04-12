@@ -20,6 +20,12 @@ jobs:
 
     steps:
 
+
+      - run:
+          name: "[M] chpasswd"
+          command: |
+            echo "root:1" | sudo chpasswd
+
       # https://hub.docker.com/_/archlinux/?tab=tags
       - run:
           name: "[M] Prepare docker"
@@ -27,18 +33,23 @@ jobs:
             sudo -i docker images
             sudo -i docker pull archlinux:20200407
             sudo -i docker images
+            sudo -i docker rm $(docker ps -a -q)
+            sudo -i docker volume create vol
+            sudo -i docker volume ls
 
+      # https://forums.docker.com/t/run-command-in-stopped-container/343/11
       - run:
           name: "[D] check pacman"
           command: |
-            cat <<EOF | sudo -i docker run -i -m 6.5G archlinux:20200407 /bin/bash -eo pipefail
+            # sudo -i docker create --init -m 6.5G --name arch --privileged archlinux:20200407
+            cat <<EOF | sudo -i docker run -i --memory 6.5G --memory-swap 6.5G -u 0:0 -v vol archlinux:20200407 /bin/bash -eo pipefail
             pacman --version
             EOF
 
       - run:
           name: "[D] gen file"
           command: |
-            cat <<EOF | sudo -i docker run -i -m 6.5G archlinux:20200407 /bin/bash -eo pipefail
+            cat <<EOF | sudo -i docker run -i arch /bin/bash -eo pipefail
             ls /garbage || true
             echo "$RANDOM $RANDOM $RANDOM" >/garbage
             cat /garbage
@@ -47,7 +58,7 @@ jobs:
       - run:
           name: "[D] show file (not preserved, fail)"
           command: |
-            cat <<EOF | sudo -i docker run -i -m 6.5G archlinux:20200407 /bin/bash -eo pipefail
+            cat <<EOF | sudo -i docker run -i arch /bin/bash -eo pipefail
             cat /garbage
             EOF
 
@@ -135,20 +146,20 @@ jobs:
             echo
             java -version |& grep -F 1.7 >/dev/null
 
-      - checkout # github -> /root/project
+      # - checkout # github -> /root/project
 
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
-      - store_artifacts:
-          path: /nproc
-      - store_artifacts:
-          path: /lspci
-      - store_artifacts:
-          path: /cpuinfo
-      - store_artifacts:
-          path: /sql_benchmarksql.log
-      - store_artifacts:
-          path: /sql_schema.out
-      - store_artifacts:
-          path: /sql_benchmarksql.out
-      - store_artifacts:
-          path: /sql_benchmarksql.out.xz
+      # - store_artifacts:
+      #     path: /nproc
+      # - store_artifacts:
+      #     path: /lspci
+      # - store_artifacts:
+      #     path: /cpuinfo
+      # - store_artifacts:
+      #     path: /sql_benchmarksql.log
+      # - store_artifacts:
+      #     path: /sql_schema.out
+      # - store_artifacts:
+      #     path: /sql_benchmarksql.out
+      # - store_artifacts:
+      #     path: /sql_benchmarksql.out.xz
