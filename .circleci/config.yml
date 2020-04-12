@@ -29,8 +29,8 @@ jobs:
           name: "[M] Hardware info"
           command: |
             pwd
-            echo "$(nproc) $(nproc --all)" | tee /m_nproc
-            tee </proc/cpuinfo /m_cpuinfo
+            echo "$(nproc) $(nproc --all)" | sudo tee /m_nproc
+            sudo tee </proc/cpuinfo /m_cpuinfo
 
       # https://hub.docker.com/_/archlinux/?tab=tags
       # https://stackoverflow.com/questions/28574433/do-docker-containers-retain-file-changes
@@ -38,20 +38,27 @@ jobs:
       - run:
           name: "[M] BASH_ENV"
           command: |
-            cat <<"EOF" >>"$BASH_ENV"
+            cat <<"EOF" >"$BASH_ENV"
             # 
-            export img="archlinux:20200407"
-            export container="arch"
-            #
-            export BASH_ENV_DOCKER="/etc/profile.d/ciecleci.sh"
             export RAM=7168M
-            export docker_run="sudo -i docker run -d --memory $RAM --memory-swap $RAM --name $container -u 0:0 $img /bin/sleep 1d"
+            export container="arch"
+            export img="archlinux:20200407"
+            #
+            export docker_run="sudo -i docker run -d --memory $RAM --memory-swap $RAM --name $container --privileged -u 0:0 -w / $img /bin/sleep 1d"
             export docker_exec="sudo -i docker exec -i $container"
             export docker_bash="$docker_exec /bin/bash -eo pipefail"
-            export docker_it="sudo -i docker exec -it $container /bin/bash -eo pipefail"
+            # export docker_it="sudo -i docker exec -it $container /bin/bash"
             export docker_cp="sudo -i docker cp"
             #
+            export  update="pacman -Syy --noprogressbar"
+            export   unreg="pacman -D --asdeps"
+            export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skip ver chk only
+            export      gc='pacman -Rssc --noprogressbar --noconfirm $(pacman -Qdttq)'
+            export upgrade="pacman -Suu --noprogressbar --noconfirm"
+            #
             export PROJ_DIR="/root/project"
+            export _JAVA_OPTIONS="-Xmx$RAM"
+            #
             EOF
             source "$BASH_ENV"
 
@@ -100,26 +107,12 @@ jobs:
             tee </proc/cpuinfo /cpuinfo
             EOF
 
-      - run:
-          name: "[D] rc"
-            $docker_exec rm -fv "BASH_ENV_DOCKER"
-            echo "export RAM=$RAM" | $docker_exec tee "$BASH_ENV_DOCKER"
-            cat <<"EOF" | $docker_exec tee "$BASH_ENV_DOCKER"
-            export _JAVA_OPTIONS="-Xmx$RAM"
-            export  update="pacman -Syy --noprogressbar"
-            export   unreg="pacman -D --asdeps"
-            export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skip ver chk only
-            export      gc="pacman -Rssc --noprogressbar --noconfirm $(pacman -Qdttq)"
-            export upgrade="pacman -Suu --noprogressbar --noconfirm"
-            EOF
-
       # udpate -> unreg||true -> partial -> gc||true -> upgrade
       - run:
           name: "[D] Pacman"
           command: |
-            $docker_bash $update
-            cat <<EOF | $docker_bash
-            cat <<"---" | xargs \$unreg || true
+            $docker_exec $update
+            cat <<"---" | xargs $docker_exec $unreg || true
               llvm-libs
               gcc-libs
               pcre
@@ -127,17 +120,16 @@ jobs:
               libpng
               avahi
             ---
-            cat <<"---" | xargs \$partial
+            cat <<"---" | xargs $docker_exec $partial
               git rxvt-unicode-terminfo openssh nmap
               wget tree nano vim pv xz unzip lsof pciutils tmux
               postgresql-libs
               jdk7-openjdk
             ---
             echo
-            \$gc || true
+            echo "$gc" | $docker_bash || true
             echo
-            \$upgrade
-            EOF
+            $docker_exec $upgrade
 
       - run:
           name: Verify J*7
@@ -147,7 +139,7 @@ jobs:
             echo
             java -version
             echo
-            java -version |& grep -F 1.7 >/dev/null
+            java -version |& grep -F 1.7 &>/dev/null
             EOF
 
       # - checkout # github -> /root/project
@@ -155,16 +147,17 @@ jobs:
       - run:
           name: "[M] steal file"
           command: |
-            $docker_cp $container:/garbage /garbage_artifact
+            $docker_cp $container:/nproc /d_nproc
+            $docker_cp $container:/cpuinfo /d_cpuinfo
 
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
-      - store_artifacts:
-          path: /d_nproc
-      - store_artifacts:
-          path: /d_cpuinfo
       - store_artifacts:
           path: /m_nproc
       - store_artifacts:
           path: /m_cpuinfo
+      - store_artifacts:
+          path: /d_nproc
+      - store_artifacts:
+          path: /d_cpuinfo
       - store_artifacts:
           path: /garbage_artifact
