@@ -26,14 +26,25 @@ jobs:
           command: |
             echo "root:1" | sudo chpasswd
 
+      - run:
+          name: "[M] BASH_ENV"
+          # https://circleci.com/docs/2.0/env-vars/#using-bash_env-to-set-environment-variables
+          command: |
+            cat <<EOF >>"$BASH_ENV"
+            export img="archlinux:20200407"
+            # docker run --privileged
+            export docker_run="sudo -i docker run -i --memory 6.5G --memory-swap 6.5G --rm -u 0:0 -v vol:/data \$img /bin/bash -eo pipefail"
+            export docker_it="sudo -i docker run -it --memory 6.5G --memory-swap 6.5G --rm -u 0:0 -v vol:/data \$img /bin/bash"
+            EOF
+
       # https://hub.docker.com/_/archlinux/?tab=tags
       - run:
           name: "[M] Prepare docker"
           command: |
             sudo -i docker images
-            sudo -i docker pull archlinux:20200407
+            sudo -i docker pull "$img"
             sudo -i docker images
-            sudo -i docker rm $(docker ps -a -q)
+            # sudo -i docker rm $(docker ps -a -q)
             sudo -i docker volume create vol
             sudo -i docker volume ls
 
@@ -41,29 +52,35 @@ jobs:
       - run:
           name: "[D] check pacman"
           command: |
-            # sudo -i docker create --init -m 6.5G --name arch --privileged archlinux:20200407
-            cat <<EOF | sudo -i docker run -i --memory 6.5G --memory-swap 6.5G -u 0:0 -v vol archlinux:20200407 /bin/bash -eo pipefail
+            cat <<EOF | $docker_run
             pacman --version
             EOF
 
       - run:
           name: "[D] gen file"
           command: |
-            cat <<EOF | sudo -i docker run -i arch /bin/bash -eo pipefail
-            ls /garbage || true
-            echo "$RANDOM $RANDOM $RANDOM" >/garbage
-            cat /garbage
+            cat <<EOF | $docker_run
+            cd /data
+            ls garbage || true
+            echo "$RANDOM $RANDOM $RANDOM" >garbage
+            cat garbage
             EOF
 
       - run:
-          name: "[D] show file (not preserved, fail)"
+          name: "[D] show file (persistant)"
           command: |
-            cat <<EOF | sudo -i docker run -i arch /bin/bash -eo pipefail
-            cat /garbage
+            cat <<EOF | $docker_run
+            cd /data
+            cat garbage
             EOF
 
       - run:
-          name: "[M] Stop for SSH"
+          name: "[M] Stop"
+          command: |
+            /usr/bin/false
+
+      - run:
+          name: "[M] Wait for SSH"
           command: |
             echo
             i=0
