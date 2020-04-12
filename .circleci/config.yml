@@ -10,28 +10,26 @@ jobs:
 
   build:
 
+    # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
     # Xenial Xerus
     machine:
       image: ubuntu-1604:201903-01
       docker_layer_caching: false
 
-    # https://hub.docker.com/_/archlinux/?tab=tags
-    # docker:
-    #   - image: archlinux:20200306
-
     resource_class: medium
 
     steps:
 
+      # https://hub.docker.com/_/archlinux/?tab=tags
       - run:
-          name: Prepare docker
+          name: "[M] Prepare docker"
           command: |
             sudo -i docker images
-            sudo -i docker pull archlinux:20200306
+            sudo -i docker pull archlinux:20200407
             sudo -i docker images
 
       - run:
-          name: Stop for SSH
+          name: "[M] Stop for SSH"
           command: |
             echo
             i=0
@@ -41,6 +39,14 @@ jobs:
               echo "$i min"
             done
             /usr/bin/false
+
+      - run:
+          name: "[D] check pacman"
+          command: |
+            cat <<EOF | docker exec /bin/bash -eo pipefail
+            pacman --version
+            EOF
+
 
       # All the hassle that ...
       # ... needed deps are not removed and installed again
