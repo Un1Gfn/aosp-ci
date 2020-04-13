@@ -71,7 +71,7 @@ jobs:
       #       $pkg install tree
 
       - restore_cache:
-          key: v2-arch-chroot
+          key: v3-arch-chroot
 
       - run:
           name: "[M] arch-install-scripts"
@@ -94,10 +94,9 @@ jobs:
               $pkg autoremove --purge
             fi
             sudo install -v -m700 ~/arch-chroot /usr/local/bin/arch-chroot
-            rm -v ~/arch-chroot
 
       - save_cache:
-          key: v2-arch-chroot
+          key: v3-arch-chroot
           paths:
             - ~/arch-chroot
 
