@@ -10,6 +10,11 @@ jobs:
 
   build:
 
+    # https://circleci.com/docs/2.0/configuration-reference/#branches
+    branches:
+      only:
+        - chroot
+
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
     # Xenial Xerus
     machine:
@@ -40,7 +45,8 @@ jobs:
           command: |
             cat <<"EOF" >"$BASH_ENV"
             #
-            export pkg="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
+            # export pkg="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
+            export pkg="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages"
             export chroot_dir="/root.x86_64"
             export chroot="sudo -i arch-chroot $chroot_dir"
             export chroot_bash="sudo -i arch-chroot $chroot_dir bash -eo pipefail"
@@ -59,22 +65,39 @@ jobs:
             EOF
             source "$BASH_ENV"
 
-      - run:
-          name: "[M] apt"
-          command: |
-            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-            $pkg update
-            $pkg install asciidoc tree
- 
+      # - run:
+      #     name: "[M] apt"
+      #     command: |
+      #       $pkg install tree
+
+      - restore_cache:
+          key: v1-arch-install-scripts
+
       - run:
           name: "[M] arch-install-scripts"
           command: |
+            if [ -f /usr/local/bin/ ]; then
+              echo "cache detected"
+              exit 0
+            fi
             pwd
+            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+            $pkg update
+            $pkg install asciidoc
             git clone https://git.archlinux.org/arch-install-scripts.git
-            cd arch-install-scripts
-            make
-            sudo make DESTDIR=/ PREFIX=/usr/local install
+            pushd arch-install-scripts
+            make PREFIX=/usr/local
+            sudo install -v -m700 ./arch-chroot /usr/local/bin/arch-chroot
+            popd
+            rm -rf arch-install-scripts
+            $pkg purge asciidoc
+            $pkg autoremove --purge
+
+      - save_cache:
+          key: v1-arch-install-scripts
+          paths:
+            - /usr/local/bin/arch-chroot
 
       - run:
           name: "[M] Prepare chroot dir"
@@ -103,6 +126,7 @@ jobs:
       - run:
           name: "[C] Pacman"
           command: |
+            $chroot pacman --version
             $chroot pacman-key --init
             $chroot pacman-key --populate archlinux
             $chroot $update
