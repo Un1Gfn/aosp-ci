@@ -46,7 +46,7 @@ jobs:
             export chroot_bash="sudo -i arch-chroot $chroot_dir bash -eo pipefail"
             #
             # https://www.archlinux.org/mirrors/status/
-            export mirrorlist='Server = http://mirror.lty.me/archlinux/$repo/os/$arch'
+            export mirror='http://mirror.lty.me/archlinux/'
             export  update="pacman -Syy --noprogressbar"
             export   unreg="pacman -D --asdeps"
             export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skip ver chk only
@@ -80,11 +80,11 @@ jobs:
           name: "[M] Prepare chroot dir"
           command: |
             pwd
-            curl -sS -LOJR http://mirror.rackspace.com/archlinux/iso/2020.04.01/archlinux-bootstrap-2020.04.01-x86_64.tar.gz
-            curl -sS -LOJR http://mirror.rackspace.com/archlinux/iso/2020.04.01/sha1sums.txt
+            curl -sS -LOJR "$mirror/iso/2020.04.01/archlinux-bootstrap-2020.04.01-x86_64.tar.gz"
+            curl -sS -LOJR "$mirror/iso/2020.04.01/sha1sums.txt"
             sha1sum -c --ignore-missing sha1sums.txt
             sudo tar xf *bootstrap*tar.gz -C /
-            echo "$mirrorlist" | sudo tee "$chroot_dir/etc/pacman.d/mirrorlist"
+            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo tee "$chroot_dir/etc/pacman.d/mirrorlist"
             sudo -i mount -v --bind "$chroot_dir" "$chroot_dir"
 
       # - run:
@@ -141,17 +141,17 @@ jobs:
       #     command: |
       #       /usr/bin/false
 
-      - run:
-          name: "[M] Wait for SSH"
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
+      # - run:
+      #     name: "[M] Wait for SSH"
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
 
       # - checkout # github -> /root/project
 
