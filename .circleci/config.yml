@@ -40,11 +40,11 @@ jobs:
           command: |
             cat <<"EOF" >"$BASH_ENV"
             #
-            export pkg="sudo -i apt-get -q --yes --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
+            export pkg="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
+            export chroot_dir="/root.x86_64"
+            export chroot="sudo -i arch-chroot $chroot_dir"
             #
-            export bootstrap_dir="/arch"
-            export chroot="sudo -i arch-chroot $bootstrap_dir"
-            #
+            export mirrorlist='Server=http://mirror.lty.me/archlinux/$repo/os/$arch'
             export  update="pacman -Syy --noprogressbar"
             export   unreg="pacman -D --asdeps"
             export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skip ver chk only
@@ -58,21 +58,33 @@ jobs:
             source "$BASH_ENV"
 
       - run:
-          name: "[M] Prepare chroot dir"
+          name: "[M] apt"
           command: |
             sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
             sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
             $pkg update
-            $pkg install arch-install-scripts
+            $pkg install asciidoc tree
+ 
+      - run:
+          name: "[M] arch-install-scripts"
+          command: |
+            pwd
+            git clone https://git.archlinux.org/arch-install-scripts.git
+            cd arch-install-scripts
+            make
+            sudo make DESTDIR=/ PREFIX=/usr/local install
+
+      - run:
+          name: "[M] Prepare chroot dir"
+          command: |
+            pwd
             curl -sS -LOJR http://mirror.rackspace.com/archlinux/iso/2020.04.01/archlinux-bootstrap-2020.04.01-x86_64.tar.gz
             curl -sS -LOJR http://mirror.rackspace.com/archlinux/iso/2020.04.01/sha1sums.txt
-            sha1sums -c sha1sums.txt
-            sudo -i mkdir "$bootstrap_dir"
-            F="$(realpath *bootstrap*)"
-            echo "$F"
-            cd "$bootstrap_dir"
-            tar xf "$F"
-            unset F
+            sha1sum -c --ignore-missing sha1sums.txt
+            sudo tar xf *bootstrap*tar.gz -C /
+            # https://www.archlinux.org/mirrors/status/
+            echo "$mirrorlist" >"$chroot_dir/etc/pacman.d/mirrorlist"
+            sudo -i mount -v --bind "$chroot_dir" "$chroot_dir"
 
       # - run:
       #     name: "[M] Stop"
@@ -91,6 +103,14 @@ jobs:
             done
             /usr/bin/false
 
+      - run:
+          name: "[M] free up space"
+          command: |
+            # df
+            # du
+            # https://www.google.com/search?q=apt+clean+cache&oq=apt+clean+cache
+            # $pkg purge
+
       # All the hassle that ...
       # ... needed deps are not removed and installed again
       # ... uneeded deps are not upgraded before removed
@@ -106,7 +126,7 @@ jobs:
       - run:
           name: "[C] Pacman"
           command: |
-            $docker_exec $update
+            $chroot $update
 
             cat <<"---" | xargs $chroot $unreg || true
               llvm-libs
