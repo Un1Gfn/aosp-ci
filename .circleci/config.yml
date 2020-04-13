@@ -71,33 +71,35 @@ jobs:
       #       $pkg install tree
 
       - restore_cache:
-          key: v1-arch-install-scripts
+          key: v2-arch-chroot
 
       - run:
           name: "[M] arch-install-scripts"
           command: |
-            if [ -f /usr/local/bin/ ]; then
-              echo "cache detected"
-              exit 0
-            fi
             pwd
-            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-            $pkg update
-            $pkg install asciidoc
-            git clone https://git.archlinux.org/arch-install-scripts.git
-            pushd arch-install-scripts
-            make PREFIX=/usr/local
-            sudo install -v -m700 ./arch-chroot /usr/local/bin/arch-chroot
-            popd
-            rm -rf arch-install-scripts
-            $pkg purge asciidoc
-            $pkg autoremove --purge
+            if [ -f ~/arch-chroot ]; then
+              echo "cached "~/arch-chroot" detected"
+            else
+              sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+              sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+              $pkg update
+              $pkg install asciidoc
+              git clone https://git.archlinux.org/arch-install-scripts.git
+              pushd arch-install-scripts
+              make PREFIX=/usr/local
+              cp -v ./arch-chroot ~/arch-chroot
+              popd
+              rm -rf arch-install-scripts
+              $pkg purge asciidoc
+              $pkg autoremove --purge
+            fi
+            sudo install -v -m700 ~/arch-chroot /usr/local/bin/arch-chroot
+            rm -v ~/arch-chroot
 
       - save_cache:
-          key: v1-arch-install-scripts
+          key: v2-arch-chroot
           paths:
-            - /usr/local/bin/arch-chroot
+            - ~/arch-chroot
 
       - run:
           name: "[M] Prepare chroot dir"
