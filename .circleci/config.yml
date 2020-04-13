@@ -43,8 +43,10 @@ jobs:
             export pkg="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
             export chroot_dir="/root.x86_64"
             export chroot="sudo -i arch-chroot $chroot_dir"
+            export chroot_bash="sudo -i arch-chroot $chroot_dir bash -eo pipefail"
             #
-            export mirrorlist='Server=http://mirror.lty.me/archlinux/$repo/os/$arch'
+            # https://www.archlinux.org/mirrors/status/
+            export mirrorlist='Server = http://mirror.lty.me/archlinux/$repo/os/$arch'
             export  update="pacman -Syy --noprogressbar"
             export   unreg="pacman -D --asdeps"
             export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skip ver chk only
@@ -82,9 +84,57 @@ jobs:
             curl -sS -LOJR http://mirror.rackspace.com/archlinux/iso/2020.04.01/sha1sums.txt
             sha1sum -c --ignore-missing sha1sums.txt
             sudo tar xf *bootstrap*tar.gz -C /
-            # https://www.archlinux.org/mirrors/status/
-            echo "$mirrorlist" >"$chroot_dir/etc/pacman.d/mirrorlist"
+            echo "$mirrorlist" | sudo tee "$chroot_dir/etc/pacman.d/mirrorlist"
             sudo -i mount -v --bind "$chroot_dir" "$chroot_dir"
+
+      # - run:
+      #     name: "[M] free up space"
+      #     command: |
+      #       df
+      #       du
+      #       https://www.google.com/search?q=apt+clean+cache&oq=apt+clean+cache
+      #       $pkg purge
+
+      # All the hassle that ...
+      # ... needed deps are not removed and installed again
+      # ... uneeded deps are not upgraded before removed
+
+      # udpate -> unreg||true -> partial -> gc||true -> upgrade
+      - run:
+          name: "[C] Pacman"
+          command: |
+            $chroot pacman-key --init
+            $chroot pacman-key --populate archlinux
+            $chroot $update
+            cat <<"---" | xargs $chroot $unreg || true
+              llvm-libs
+              gcc-libs
+              pcre
+              gpm
+              libpng
+              avahi
+            ---
+            cat <<"---" | xargs $chroot $partial
+              git rxvt-unicode-terminfo openssh nmap
+              wget tree nano vim pv xz unzip lsof pciutils tmux
+              postgresql-libs
+              jdk7-openjdk
+            ---
+            echo
+            echo "$gc" | $chroot_bash || true
+            echo
+            $chroot $upgrade
+
+      - run:
+          name: "[C] Verify J*7"
+          command: |
+            cat <<EOF | $chroot_bash
+            archlinux-java status
+            echo
+            java -version
+            echo
+            java -version |& grep -F 1.7 &>/dev/null
+            EOF
 
       # - run:
       #     name: "[M] Stop"
@@ -103,77 +153,14 @@ jobs:
             done
             /usr/bin/false
 
-      - run:
-          name: "[M] free up space"
-          command: |
-            # df
-            # du
-            # https://www.google.com/search?q=apt+clean+cache&oq=apt+clean+cache
-            # $pkg purge
-
-      # All the hassle that ...
-      # ... needed deps are not removed and installed again
-      # ... uneeded deps are not upgraded before removed
-
-      # Misleading
-      # - run:
-      #     name: "[M] copy BASH_ENV to container"
-      #     # https://circleci.com/docs/2.0/env-vars/#using-bash_env-to-set-environment-variables
-      #     command: |
-      #       $docker_cp "$BASH_ENV" "$container":/etc/profile.d/circleci.sh
-
-      # udpate -> unreg||true -> partial -> gc||true -> upgrade
-      - run:
-          name: "[C] Pacman"
-          command: |
-            $chroot $update
-
-            cat <<"---" | xargs $chroot $unreg || true
-              llvm-libs
-              gcc-libs
-              pcre
-              gpm
-              libpng
-              avahi
-            ---
-
-            # cat <<"---" | xargs $docker_exec $partial
-            #   git rxvt-unicode-terminfo openssh nmap
-            #   wget tree nano vim pv xz unzip lsof pciutils tmux
-            #   postgresql-libs
-            #   jdk7-openjdk
-            # ---
-
-            # echo
-            # echo "$gc" | $docker_bash || true
-            # echo
-            # $docker_exec $upgrade
-
-      - run:
-          name: "[C] Verify J*7"
-          command: |
-            cat <<EOF | $docker_bash
-            archlinux-java status
-            echo
-            java -version
-            echo
-            java -version |& grep -F 1.7 &>/dev/null
-            EOF
-
       # - checkout # github -> /root/project
-
-      - run:
-          name: "[M] steal file"
-          command: |
-            $docker_cp $container:/nproc /d_nproc
-            $docker_cp $container:/cpuinfo /d_cpuinfo
 
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
       - store_artifacts:
           path: /m_nproc
       - store_artifacts:
           path: /m_cpuinfo
-      - store_artifacts:
-          path: /d_nproc
-      - store_artifacts:
-          path: /d_cpuinfo
+      # - store_artifacts:
+      #     path: /c_nproc
+      # - store_artifacts:
+      #     path: /c_cpuinfo

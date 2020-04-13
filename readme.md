@@ -8,6 +8,7 @@ CircleCI
 
 
 [Docker](https://www.docker.com/)
+* Privileged is evil [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]()
 * [Migration from docker to machine](https://circleci.com/docs/2.0/docker-to-machine/)
 * [wikipedia](https://en.wikipedia.org/wiki/Docker_(software))
 * [Travis guide](https://docs.travis-ci.com/user/docker/)
@@ -64,6 +65,18 @@ echo
 $upgrade
 
 ```
+
+Locale?
+```
+perl: warning: Setting locale failed.
+perl: warning: Please check that your locale settings:
+  LANGUAGE = (unset),
+  LC_ALL = (unset),
+  LANG = "en_US.UTF-8"
+    are supported and installed on your system.
+perl: warning: Falling back to the standard locale ("C").
+```
+
 
 [Makepkg as nobody](http://allanmcrae.com/2015/01/replacing-makepkg-asroot/)
 ```bash
