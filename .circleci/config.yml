@@ -39,16 +39,11 @@ jobs:
           name: "[M] BASH_ENV"
           command: |
             cat <<"EOF" >"$BASH_ENV"
-            # 
-            export RAM=7168M
-            export container="arch"
-            export img="archlinux:20200407"
             #
-            export docker_run="sudo -i docker run -d --memory $RAM --memory-swap $RAM --name $container --privileged -u 0:0 -w / $img /bin/sleep 1d"
-            export docker_exec="sudo -i docker exec -i $container"
-            export docker_bash="$docker_exec /bin/bash -eo pipefail"
-            # export docker_it="sudo -i docker exec -it $container /bin/bash"
-            export docker_cp="sudo -i docker cp"
+            export pkg="apt-get -q --yes --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
+            #
+            export bootstrap_dir="/arch"
+            export chroot="sudo -i arch-chroot $bootstrap_dir"
             #
             export  update="pacman -Syy --noprogressbar"
             export   unreg="pacman -D --asdeps"
@@ -63,30 +58,35 @@ jobs:
             source "$BASH_ENV"
 
       - run:
-          name: "[M] Prepare docker"
+          name: "[M] Prepare chroot dir"
           command: |
-            sudo -i docker images
-            sudo -i docker pull "$img"
-            sudo -i docker images
-            # sudo -i docker rm $(docker ps -a -q)
-            $docker_run
+            $pkg install arch-install-scripts
+            curl -sS -LOJR http://mirror.rackspace.com/archlinux/iso/2020.04.01/archlinux-bootstrap-2020.04.01-x86_64.tar.gz
+            curl -sS -LOJR http://mirror.rackspace.com/archlinux/iso/2020.04.01/sha1sums.txt
+            sha1sums -c sha1sums.txt
+            sudo -i mkdir "$bootstrap_dir"
+            F="$(realpath *bootstrap*)"
+            echo "$F"
+            cd "$bootstrap_dir"
+            tar xf "$F"
+            unset F
 
       # - run:
       #     name: "[M] Stop"
       #     command: |
       #       /usr/bin/false
 
-      # - run:
-      #     name: "[M] Wait for SSH"
-      #     command: |
-      #       echo
-      #       i=0
-      #       while true; do
-      #         sleep 60
-      #         i=$((i+1))
-      #         echo "$i min"
-      #       done
-      #       /usr/bin/false
+      - run:
+          name: "[M] Wait for SSH"
+          command: |
+            echo
+            i=0
+            while true; do
+              sleep 60
+              i=$((i+1))
+              echo "$i min"
+            done
+            /usr/bin/false
 
       # All the hassle that ...
       # ... needed deps are not removed and installed again
@@ -99,20 +99,13 @@ jobs:
       #     command: |
       #       $docker_cp "$BASH_ENV" "$container":/etc/profile.d/circleci.sh
 
-      - run:
-          name: "[D] Hardware info"
-          command: |
-            cat <<"EOF" | $docker_bash
-            echo "$(nproc) $(nproc --all)" | tee /nproc
-            tee </proc/cpuinfo /cpuinfo
-            EOF
-
       # udpate -> unreg||true -> partial -> gc||true -> upgrade
       - run:
-          name: "[D] Pacman"
+          name: "[C] Pacman"
           command: |
             $docker_exec $update
-            cat <<"---" | xargs $docker_exec $unreg || true
+
+            cat <<"---" | xargs $chroot $unreg || true
               llvm-libs
               gcc-libs
               pcre
@@ -120,19 +113,21 @@ jobs:
               libpng
               avahi
             ---
-            cat <<"---" | xargs $docker_exec $partial
-              git rxvt-unicode-terminfo openssh nmap
-              wget tree nano vim pv xz unzip lsof pciutils tmux
-              postgresql-libs
-              jdk7-openjdk
-            ---
-            echo
-            echo "$gc" | $docker_bash || true
-            echo
-            $docker_exec $upgrade
+
+            # cat <<"---" | xargs $docker_exec $partial
+            #   git rxvt-unicode-terminfo openssh nmap
+            #   wget tree nano vim pv xz unzip lsof pciutils tmux
+            #   postgresql-libs
+            #   jdk7-openjdk
+            # ---
+
+            # echo
+            # echo "$gc" | $docker_bash || true
+            # echo
+            # $docker_exec $upgrade
 
       - run:
-          name: Verify J*7
+          name: "[C] Verify J*7"
           command: |
             cat <<EOF | $docker_bash
             archlinux-java status
@@ -159,5 +154,3 @@ jobs:
           path: /d_nproc
       - store_artifacts:
           path: /d_cpuinfo
-      - store_artifacts:
-          path: /garbage_artifact
