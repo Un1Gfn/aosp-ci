@@ -68,37 +68,21 @@ jobs:
       # - run:
       #     name: "[M] apt"
       #     command: |
-      #       $pkg install tree
-
-      - restore_cache:
-          key: v3-arch-chroot
+      #       sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+      #       sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+      #       $pkg update
+      #       $pkg install tree pciutils tmux
 
       - run:
           name: "[M] arch-install-scripts"
           command: |
             pwd
-            if [ -f ~/arch-chroot ]; then
-              echo "cached "~/arch-chroot" detected"
-            else
-              sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-              sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-              $pkg update
-              $pkg install asciidoc
-              git clone https://git.archlinux.org/arch-install-scripts.git
-              pushd arch-install-scripts
-              make PREFIX=/usr/local
-              cp -v ./arch-chroot ~/arch-chroot
-              popd
-              rm -rf arch-install-scripts
-              $pkg purge asciidoc
-              $pkg autoremove --purge
-            fi
-            sudo install -v -m700 ~/arch-chroot /usr/local/bin/arch-chroot
-
-      - save_cache:
-          key: v3-arch-chroot
-          paths:
-            - ~/arch-chroot
+            git clone https://git.archlinux.org/arch-install-scripts.git
+            pushd arch-install-scripts
+            make PREFIX=/usr/local arch-chroot
+            sudo install -v -m700 ./arch-chroot /usr/local/bin/arch-chroot
+            popd
+            rm -rf arch-install-scripts
 
       - run:
           name: "[M] Prepare chroot dir"
@@ -140,9 +124,8 @@ jobs:
               avahi
             ---
             cat <<"---" | xargs $chroot $partial
-              git rxvt-unicode-terminfo openssh nmap
-              wget tree nano vim pv xz unzip lsof pciutils tmux
-              postgresql-libs
+              git repo rxvt-unicode-terminfo openssh
+              wget tree nano vim pv xz unzip
               jdk7-openjdk
             ---
             echo
