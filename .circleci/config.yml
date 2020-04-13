@@ -40,7 +40,7 @@ jobs:
           command: |
             cat <<"EOF" >"$BASH_ENV"
             #
-            export pkg="apt-get -q --yes --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
+            export pkg="sudo -i apt-get -q --yes --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
             #
             export bootstrap_dir="/arch"
             export chroot="sudo -i arch-chroot $bootstrap_dir"
@@ -60,6 +60,9 @@ jobs:
       - run:
           name: "[M] Prepare chroot dir"
           command: |
+            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+            $pkg update
             $pkg install arch-install-scripts
             curl -sS -LOJR http://mirror.rackspace.com/archlinux/iso/2020.04.01/archlinux-bootstrap-2020.04.01-x86_64.tar.gz
             curl -sS -LOJR http://mirror.rackspace.com/archlinux/iso/2020.04.01/sha1sums.txt
