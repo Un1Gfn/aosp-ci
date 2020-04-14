@@ -53,11 +53,9 @@ jobs:
             #
             # https://www.archlinux.org/mirrors/status/
             export mirror='http://mirror.lty.me/archlinux/'
-            export  update="pacman -Syy --noprogressbar"
-            export   unreg="pacman -D --asdeps"
-            export partial="pacman -S --needed --nodeps --noprogressbar --noconfirm" # one --nodeps skip ver chk only
-            export      gc='pacman -Rssc --noprogressbar --noconfirm $(pacman -Qdttq)'
-            export upgrade="pacman -Suu --noprogressbar --noconfirm"
+            export  unreg="pacman -D --asdeps"
+            export     gc='pacman -Rssc --noprogressbar --noconfirm $(pacman -Qdttq)'
+            export   sync='pacman -Syuu --noprogressbar --noconfirm'
             #
             export PROJ_DIR="/root/project"
             export _JAVA_OPTIONS="-Xmx$RAM"
@@ -94,40 +92,12 @@ jobs:
             sudo tar xf *bootstrap*tar.gz -C /
             sudo -i mount -v --bind "$chroot_dir" "$chroot_dir"
 
-      # https://wiki.archlinux.org/index.php/Installation_guide#Configure_the_system
-      # https://bbs.archlinux.org/viewtopic.php?id=229027
       - run:
-          name: "[C] Locale, mirror, tz, ..."
-          command: |
-            # 
-            echo 'en_US.UTF-8 UTF-8' | sudo -i tee "$chroot_dir/etc/locale.gen"
-            $chroot locale-gen
-            echo 'LANG=C' | sudo -i tee "$chroot_dir/etc/locale.conf"
-            # 
-            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo -i tee "$chroot_dir/etc/pacman.d/mirrorlist"
-            $chroot ln -sf /usr/share/zoneinfo/UTC /etc/localtime
-            sudo -i cat "$chroot_dir/etc/hosts" || true
-
-      # - run:
-      #     name: "[M] free up space"
-      #     command: |
-      #       df
-      #       du
-      #       https://www.google.com/search?q=apt+clean+cache&oq=apt+clean+cache
-      #       $pkg purge
-
-      # All the hassle that ...
-      # ... needed deps are not removed and installed again
-      # ... uneeded deps are not upgraded before removed
-
-      # udpate -> unreg||true -> partial -> gc||true -> upgrade
-      - run:
-          name: "[C] Pacman"
+          name: "[C] Pacman init"
           command: |
             $chroot pacman --version
             $chroot pacman-key --init
             $chroot pacman-key --populate archlinux
-            $chroot $update
             cat <<"---" | xargs $chroot $unreg || true
               llvm-libs
               gcc-libs
@@ -136,16 +106,33 @@ jobs:
               libpng
               avahi
             ---
-            cat <<"---" | xargs $chroot $partial
-              git repo rxvt-unicode-terminfo openssh sudo
+            echo "$gc" | $chroot_bash || true
+            $chroot $sync
+
+      # https://wiki.archlinux.org/index.php/Installation_guide#Configure_the_system
+      - run:
+          name: "[C] Locale, mirror, tz, ..."
+          command: |
+            #
+            echo 'en_US.UTF-8 UTF-8' | sudo -i tee "$chroot_dir/etc/locale.gen"
+            $sync sed
+            $chroot locale-gen
+            echo 'LANG=C' | sudo -i tee "$chroot_dir/etc/locale.conf"
+            #
+            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo -i tee "$chroot_dir/etc/pacman.d/mirrorlist"
+            $chroot ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+            sudo -i cat "$chroot_dir/etc/hosts" || true
+
+      - run:
+          name: "[C] Pacman install"
+          command: |
+            cat <<"---" | xargs $chroot $sync
+              git repo rxvt-unicode-terminfo openssh sudo base-devel
               wget tree nano vim pv xz unzip
               jdk7-openjdk
             ---
-            echo
-            echo "$gc" | $chroot_bash || true
-            echo
-            $chroot $upgrade
 
+      # https://bbs.archlinux.org/viewtopic.php?id=229027
       # http://allanmcrae.com/2015/01/replacing-makepkg-asroot/
       - run:
           name: "[C] AUR"
@@ -156,9 +143,8 @@ jobs:
             git clone https://aur.archlinux.org/simg-tools.git
             chown -R nobody:nobody simg-tools
             pushd simg-tools
-            # su -c "makepkg -si --noconfirm --needed --noprogressbar" nobody
-            sudo -u nobody makepkg -s --noconfirm --needed --noprogressbar
-            pacman -U --noprogressbar --noconfirm  simg-tools-*.pkg.tar.xz
+            sudo -u nobody makepkg -si --noconfirm --needed --noprogressbar
+            # pacman -U --noprogressbar --noconfirm  simg-tools-*.pkg.tar.xz
             popd
             rm -rf simg-tools
             EOF
@@ -192,6 +178,15 @@ jobs:
       #       /usr/bin/false
 
       # - checkout # github -> /root/project
+
+      # - run:
+      #     name: "[M/C] free up space"
+      #     command: |
+      #       df
+      #       du
+      #       https://www.google.com/search?q=apt+clean+cache&oq=apt+clean+cache
+      #       $pkg purge
+      #       $chroot $gc
 
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
       - store_artifacts:

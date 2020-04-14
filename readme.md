@@ -77,20 +77,6 @@ perl: warning: Please check that your locale settings:
 perl: warning: Falling back to the standard locale ("C").
 ```
 
-
-[Makepkg as nobody](http://allanmcrae.com/2015/01/replacing-makepkg-asroot/)
-```bash
-cd /
-git clone https://aur.archlinux.org/simg-tools.git
-chown -R nobody:nobody simg-tools
-cd simg-tools
-# su -c "makepkg -si --noconfirm --needed --noprogressbar" nobody
-sudo -u nobody makepkg -s --noconfirm --needed --noprogressbar
-pacman -U --noprogressbar --noconfirm  simg-tools-*.pkg.tar.xz
-cd /
-rm -rf simg-tools
-```
-
 Save disk space
 ```bash
 rm -rfv /var/cache/pacman/*
