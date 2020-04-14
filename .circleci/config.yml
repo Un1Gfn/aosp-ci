@@ -53,9 +53,10 @@ jobs:
             #
             # https://www.archlinux.org/mirrors/status/
             export mirror='http://mirror.lty.me/archlinux/'
-            export  unreg="pacman -D --asdeps"
-            export     gc='pacman -Rssc --noprogressbar --noconfirm $(pacman -Qdttq)'
-            export   sync='pacman -Syuu --noprogressbar --noconfirm'
+            export   unreg='pacman    -D --asdeps'
+            export refresh='pacman  -Syy --noprogressbar --noconfirm'
+            export    sync='pacman -Syuu --noprogressbar --noconfirm'
+            export      gc='pacman -Rssc --noprogressbar --noconfirm $(pacman -Qdttq)'
             #
             export PROJ_DIR="/root/project"
             export _JAVA_OPTIONS="-Xmx$RAM"
@@ -83,7 +84,7 @@ jobs:
             rm -rf arch-install-scripts
 
       - run:
-          name: "[M] Populate chroot dir"
+          name: "[M] Populate chroot"
           command: |
             pwd
             curl -sS -LOJR "$mirror/iso/2020.04.01/archlinux-bootstrap-2020.04.01-x86_64.tar.gz"
@@ -92,12 +93,22 @@ jobs:
             sudo tar xf *bootstrap*tar.gz -C /
             sudo -i mount -v --bind "$chroot_dir" "$chroot_dir"
 
+      # https://wiki.archlinux.org/index.php/Installation_guide#Configure_the_system
+      - run:
+          name: "[C] hosts, mirror, TZ and LANG"
+          command: |
+            $chroot cat /etc/hosts || true
+            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo -i tee "$chroot_dir/etc/pacman.d/mirrorlist"
+            $chroot ln -v -sf /usr/share/zoneinfo/UTC /etc/localtime
+            echo 'LANG=C' | sudo -i tee "$chroot_dir/etc/locale.conf"
+
       - run:
           name: "[C] Pacman init"
           command: |
             $chroot pacman --version
             $chroot pacman-key --init
             $chroot pacman-key --populate archlinux
+            $chroot $refresh
             cat <<"---" | xargs $chroot $unreg || true
               llvm-libs
               gcc-libs
@@ -109,19 +120,12 @@ jobs:
             echo "$gc" | $chroot_bash || true
             $chroot $sync
 
-      # https://wiki.archlinux.org/index.php/Installation_guide#Configure_the_system
       - run:
-          name: "[C] Locale, mirror, tz, ..."
+          name: "[C] Locale"
           command: |
-            #
             echo 'en_US.UTF-8 UTF-8' | sudo -i tee "$chroot_dir/etc/locale.gen"
-            $sync sed
+            $chroot $sync sed
             $chroot locale-gen
-            echo 'LANG=C' | sudo -i tee "$chroot_dir/etc/locale.conf"
-            #
-            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo -i tee "$chroot_dir/etc/pacman.d/mirrorlist"
-            $chroot ln -sf /usr/share/zoneinfo/UTC /etc/localtime
-            sudo -i cat "$chroot_dir/etc/hosts" || true
 
       - run:
           name: "[C] Pacman install"
