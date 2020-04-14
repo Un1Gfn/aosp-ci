@@ -95,14 +95,13 @@ jobs:
 
       # https://wiki.archlinux.org/index.php/Installation_guide#Configure_the_system
       - run:
-          name: "[C] hosts, mirror, TZ and LANG"
+          name: "[M/C] hosts, mirror, TZ and LANG"
           command: |
             cat /etc/hosts
             sudo -i cp -v /etc/hosts "$chroot_dir/etc/hosts"
-            # cat <<"---" >/etc/hosts
-            # ---
+            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo -i tee "$chroot_dir/etc/pacman.d/mirrorlist"
+            echo
             cat <<EOF | $chroot_bash
-            echo 'Server = '"$mirror"'/$repo/os/$arch' >/etc/pacman.d/mirrorlist
             ln -v -sf /usr/share/zoneinfo/UTC /etc/localtime
             echo 'LANG=C' >/etc/locale.conf
             EOF
