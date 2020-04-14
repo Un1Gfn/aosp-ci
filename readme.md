@@ -78,6 +78,10 @@ perl: warning: Falling back to the standard locale ("C").
 ```
 
 Save disk space
+* [duc](https://duc.zevv.nl/)
+  * [usage](https://github.com/zevv/duc/blob/master/doc/duc.md)
+  * [AUR](https://aur.archlinux.org/packages/duc/)
+  * [xenial](https://packages.ubuntu.com/xenial/duc)
 ```bash
 rm -rfv /var/cache/pacman/*
 rm -rfv /var/lib/pacman/sync/*

@@ -70,7 +70,7 @@ jobs:
       #       sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
       #       sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
       #       $pkg update
-      #       $pkg install tree pciutils tmux
+      #       $pkg install tree pciutils tmux duc
 
       - run:
           name: "[M] arch-install-scripts"
@@ -166,17 +166,28 @@ jobs:
             java -version |& grep -F 1.7 &>/dev/null
             EOF
 
-      # - run:
-      #     name: "[M] Wait for SSH"
-      #     command: |
-      #       echo
-      #       i=0
-      #       while true; do
-      #         sleep 60
-      #         i=$((i+1))
-      #         echo "$i min"
-      #       done
-      #       /usr/bin/false
+      - run:
+          name: "[C] Steal blobs"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            $chroot df -h
+            echo
+            $chroot simg2img --help || true
+            echo
+
+      - run:
+          name: "[M] Wait for SSH"
+          command: |
+            echo
+            i=0
+            while true; do
+              sleep 60
+              i=$((i+1))
+              echo "$i min"
+            done
+            /usr/bin/false
 
       # - run:
       #     name: "[M] Stop"
