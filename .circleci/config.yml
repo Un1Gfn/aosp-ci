@@ -119,19 +119,19 @@ jobs:
             ---
             echo "$gc" | $chroot_bash || true
             $chroot $sync
+            $chroot $sync base base-devel
 
       - run:
           name: "[C] Locale"
           command: |
             echo 'en_US.UTF-8 UTF-8' | sudo -i tee "$chroot_dir/etc/locale.gen"
-            $chroot $sync sed
             $chroot locale-gen
 
       - run:
           name: "[C] Pacman install"
           command: |
             cat <<"---" | xargs $chroot $sync
-              git repo rxvt-unicode-terminfo openssh sudo base-devel
+              git repo rxvt-unicode-terminfo openssh sudo
               wget tree nano vim pv xz unzip
               jdk7-openjdk
             ---
