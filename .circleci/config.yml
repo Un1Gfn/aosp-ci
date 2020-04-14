@@ -97,10 +97,15 @@ jobs:
       - run:
           name: "[C] hosts, mirror, TZ and LANG"
           command: |
-            $chroot cat /etc/hosts || true
-            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo -i tee "$chroot_dir/etc/pacman.d/mirrorlist"
-            $chroot ln -v -sf /usr/share/zoneinfo/UTC /etc/localtime
-            echo 'LANG=C' | sudo -i tee "$chroot_dir/etc/locale.conf"
+            cat /etc/hosts
+            sudo -i cp -v /etc/hosts "$chroot_dir/etc/hosts"
+            # cat <<"---" >/etc/hosts
+            # ---
+            cat <<EOF | $chroot_bash
+            echo 'Server = '"$mirror"'/$repo/os/$arch' >/etc/pacman.d/mirrorlist
+            ln -v -sf /usr/share/zoneinfo/UTC /etc/localtime
+            echo 'LANG=C' >/etc/locale.conf
+            EOF
 
       - run:
           name: "[C] Pacman init"
@@ -110,12 +115,8 @@ jobs:
             $chroot pacman-key --populate archlinux
             $chroot $refresh
             cat <<"---" | xargs $chroot $unreg || true
-              llvm-libs
-              gcc-libs
-              pcre
-              gpm
-              libpng
-              avahi
+              llvm-libs gcc-libs
+              pcre gpm libpng avahi glib2
             ---
             echo "$gc" | $chroot_bash || true
             $chroot $sync
