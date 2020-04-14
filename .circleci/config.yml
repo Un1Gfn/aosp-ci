@@ -141,16 +141,18 @@ jobs:
       - run:
           name: "[C] AUR"
           command: |
-            echo "nobody ALL=(ALL) NOPASSWD: pacman" | sudo -i tee -a "$chroot_dir/etc/sudoers.d/makepkg"
+            echo "nobody ALL=(ALL) NOPASSWD: /usr/bin/pacman" | sudo -i tee "$chroot_dir/etc/sudoers.d/makepkg"
             cat <<"EOF" | $chroot_bash
             pwd
-            git clone https://aur.archlinux.org/simg-tools.git
-            chown -R nobody:nobody simg-tools
-            pushd simg-tools
+            pkg="android-simg2img"
+            git clone "https://aur.archlinux.org/$pkg.git"
+            chown -R nobody:nobody "$pkg"
+            pushd "$pkg"
             sudo -u nobody makepkg -si --noconfirm --needed --noprogressbar
-            # pacman -U --noprogressbar --noconfirm  simg-tools-*.pkg.tar.xz
+            # pacman -U --noprogressbar --noconfirm  *.pkg.tar.xz
             popd
-            rm -rf simg-tools
+            rm -rf "$pkg"
+            unset pkg
             EOF
 
       - run:
