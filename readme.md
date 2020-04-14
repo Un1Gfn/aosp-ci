@@ -2,7 +2,7 @@
 CircleCI [Pipelines](https://app.circleci.com/pipelines/github/Un1Gfn/lineage)
 
 LineageOS
-* [updater app store zips in /data/lineageos_updates/](https://wiki.lineageos.org/faq.html#where-does-the-updater-app-store-the-downloaded-zip)
+* [the updater app stores zips in /data/lineageos_updates/](https://wiki.lineageos.org/faq.html#where-does-the-updater-app-store-the-downloaded-zip)
 * [Build status](https://www.lineageoslog.com/build)
 
 [Build LineageOS for angler](https://wiki.lineageos.org/devices/angler/build)
@@ -16,8 +16,16 @@ Android sparse image
   * [lineage wiki](https://wiki.lineageos.org/extracting_blobs_from_zips.html)
   * [aosp guide](https://source.android.com/devices/bootloader/partitions-images)
 
+tmux
+Detach: <kbd>Ctrl</kbd> + <kbd>b</kbd> <kbd>d</kbd>
+
 curl
 ```bash
+# Progress meter
+curl -LOJR 'https://...'
+# Progress bar
+curl -# -LOJR 'https://...'
+# Silent
 curl -sS -LOJR 'https://...'
 ```
 
@@ -45,7 +53,6 @@ rm -rfv /var/cache/pkgfile/*"
 
 Steal blobs from [factory image](https://developers.google.com/android/images#bullhead)
 ```bash
-wget https://dl.google.com/dl/android/aosp/angler-opm7.181205.001-factory-b75ce068.zip
 sum0="b75ce068f23a0e793805f80fccbc081eca52861ef5eb080c47f502de4c3f9713"
 sum1="$(sha256sum angler-opm7.181205.001-factory-b75ce068.zip | cut -d' ' -f1)"
 if [ "$sum0" = "$sum1" ]; then
@@ -62,7 +69,17 @@ unzip image-angler-opm7.181205.001.zip
 ```
 
 
-<details><summary>H</summary>
+```bash
+# file *img
+boot.img:                           Android bootimg, kernel (0x8000), ramdisk (0x2000000), page size: 4096, cmdline (androidboot.hardware=angler androidboot.console=ttyHSL0 msm_rtb.filter=0x37 ehci-hcd.park=3 lpm)
+recovery.img:                       Android bootimg, kernel (0x8000), ramdisk (0x2000000), page size: 4096, cmdline (androidboot.hardware=angler androidboot.console=ttyHSL0 msm_rtb.filter=0x37 ehci-hcd.park=3 lpm)
+system.img:                         Android sparse image, version: 1.0, Total of 786432 4096-byte output blocks in 3898 input chunks.
+vendor.img:                         Android sparse image, version: 1.0, Total of 51200 4096-byte output blocks in 845 input chunks.
+radio-angler-angler-03.88.img:      data
+bootloader-angler-angler-03.84.img: data
+```
+
+<details><summary> *h* </summary>
 
 [Docker](https://www.docker.com/)
 * Privileged is evil [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]()

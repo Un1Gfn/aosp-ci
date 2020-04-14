@@ -84,7 +84,7 @@ jobs:
             rm -rf arch-install-scripts
 
       - run:
-          name: "[M] Populate chroot"
+          name: "[M] Pull and populate chroot from mirror"
           command: |
             pwd
             curl -sS -LOJR "$mirror/iso/2020.04.01/archlinux-bootstrap-2020.04.01-x86_64.tar.gz"
@@ -131,7 +131,7 @@ jobs:
           name: "[C] Pacman install"
           command: |
             cat <<"---" | xargs $chroot $sync
-              git repo rxvt-unicode-terminfo openssh sudo
+              git repo time rxvt-unicode-terminfo openssh sudo
               wget tree nano vim pv xz unzip
               jdk7-openjdk
             ---
@@ -166,16 +166,75 @@ jobs:
             java -version |& grep -F 1.7 &>/dev/null
             EOF
 
+      # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
+      # https://source.android.com/setup/develop/repo
+      # wall clock time - 18:41.30
+      # 13G
       - run:
-          name: "[C] Steal blobs"
+          name: "[C] Repo"
           command: |
             echo
             sudo -i df -h
             echo
-            $chroot df -h
+            cat <<"EOF" | $chroot_bash
+            pwd
             echo
-            $chroot simg2img --help || true
+            df -h
             echo
+            mkdir -p /lineage
+            cd /lineage
+            for i in system global; do
+              git config --$i user.email "darren19970810@gmail.com"
+              git config --$i user.name "Darren Ng"
+            done
+            yes | repo init --depth=1 -u https://github.com/LineageOS/android.git -b lineage-15.1
+            echo
+            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -c
+            # du -hd 0 .repo
+            echo
+            df -h
+            echo
+            EOF
+
+      - run:
+          name: "[C] Steal blobs"
+          command: |
+            mkdir -p /angler
+            cd /angler
+            curl -# -LOJR "https://dl.google.com/dl/android/aosp/angler-opm7.181205.001-factory-b75ce068.zip"
+            sum0="b75ce068f23a0e793805f80fccbc081eca52861ef5eb080c47f502de4c3f9713"
+            sum1="$(sha256sum angler-opm7.181205.001-factory-b75ce068.zip | cut -d' ' -f1)"
+            if [ "$sum0" = "$sum1" ]; then
+              echo checksum match
+            else
+              echo checksum mismatch
+              /usr/bin/false
+            fi
+            unzip angler-opm*-factory-*.zip
+            cd angler-opm*/
+            unzip image-angler-opm*.zip
+            echo
+            find . -iname '*img*'
+            echo
+            file *img
+            echo
+            [ -z "$(mount | grep mnt)" ] || exit 1
+            for i in system vendor; do
+              simg2img "$i".img "$i".raw.img
+              mkdir -v /"$i"
+              mount -v "$i".raw.img /"$i"
+            done
+
+            mkdir -v /device
+            cd /device
+            git clone https://github.com/LineageOS/android_device_huawei_angler.git
+
+            rm -rf /device
+            rmdir -v /system
+            rmdir -v /vendor
+            rm -rf /angler
+
+            EOF
 
       - run:
           name: "[M] Wait for SSH"
