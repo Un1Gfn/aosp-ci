@@ -85,15 +85,28 @@ jobs:
             rm -rf arch-install-scripts
 
       - run:
-          name: "[M] Prepare chroot dir"
+          name: "[M] Populate chroot dir"
           command: |
             pwd
             curl -sS -LOJR "$mirror/iso/2020.04.01/archlinux-bootstrap-2020.04.01-x86_64.tar.gz"
             curl -sS -LOJR "$mirror/iso/2020.04.01/sha1sums.txt"
             sha1sum -c --ignore-missing sha1sums.txt
             sudo tar xf *bootstrap*tar.gz -C /
-            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo tee "$chroot_dir/etc/pacman.d/mirrorlist"
             sudo -i mount -v --bind "$chroot_dir" "$chroot_dir"
+
+      # https://wiki.archlinux.org/index.php/Installation_guide#Configure_the_system
+      # https://bbs.archlinux.org/viewtopic.php?id=229027
+      - run:
+          name: "[C] Locale, mirror, tz, ..."
+          command: |
+            # 
+            echo 'en_US.UTF-8 UTF-8' | sudo -i tee "$chroot_dir/etc/locale.gen"
+            $chroot locale-gen
+            echo 'LANG=C' | sudo -i tee "$chroot_dir/etc/locale.conf"
+            # 
+            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo -i tee "$chroot_dir/etc/pacman.d/mirrorlist"
+            $chroot ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+            sudo -i cat "$chroot_dir/etc/hosts" || true
 
       # - run:
       #     name: "[M] free up space"
@@ -124,7 +137,7 @@ jobs:
               avahi
             ---
             cat <<"---" | xargs $chroot $partial
-              git repo rxvt-unicode-terminfo openssh
+              git repo rxvt-unicode-terminfo openssh sudo
               wget tree nano vim pv xz unzip
               jdk7-openjdk
             ---
@@ -132,6 +145,23 @@ jobs:
             echo "$gc" | $chroot_bash || true
             echo
             $chroot $upgrade
+
+      # http://allanmcrae.com/2015/01/replacing-makepkg-asroot/
+      - run:
+          name: "[C] AUR"
+          command: |
+            echo "nobody ALL=(ALL) NOPASSWD: pacman" | sudo -i tee -a "$chroot_dir/etc/sudoers.d/makepkg"
+            cat <<"EOF" | $chroot_bash
+            pwd
+            git clone https://aur.archlinux.org/simg-tools.git
+            chown -R nobody:nobody simg-tools
+            pushd simg-tools
+            # su -c "makepkg -si --noconfirm --needed --noprogressbar" nobody
+            sudo -u nobody makepkg -s --noconfirm --needed --noprogressbar
+            pacman -U --noprogressbar --noconfirm  simg-tools-*.pkg.tar.xz
+            popd
+            rm -rf simg-tools
+            EOF
 
       - run:
           name: "[C] Verify J*7"
@@ -144,21 +174,21 @@ jobs:
             java -version |& grep -F 1.7 &>/dev/null
             EOF
 
+      - run:
+          name: "[M] Wait for SSH"
+          command: |
+            echo
+            i=0
+            while true; do
+              sleep 60
+              i=$((i+1))
+              echo "$i min"
+            done
+            /usr/bin/false
+
       # - run:
       #     name: "[M] Stop"
       #     command: |
-      #       /usr/bin/false
-
-      # - run:
-      #     name: "[M] Wait for SSH"
-      #     command: |
-      #       echo
-      #       i=0
-      #       while true; do
-      #         sleep 60
-      #         i=$((i+1))
-      #         echo "$i min"
-      #       done
       #       /usr/bin/false
 
       # - checkout # github -> /root/project
