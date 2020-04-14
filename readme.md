@@ -1,23 +1,9 @@
 
+CircleCI [Pipelines](https://app.circleci.com/pipelines/github/Un1Gfn/lineage)
+
 LineageOS
 * [updater app store zips in /data/lineageos_updates/](https://wiki.lineageos.org/faq.html#where-does-the-updater-app-store-the-downloaded-zip)
 * [Build status](https://www.lineageoslog.com/build)
-
-CircleCI
-* [Pipelines](https://app.circleci.com/pipelines/github/Un1Gfn/lineage)
-
-
-[Docker](https://www.docker.com/)
-* Privileged is evil [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]()
-* [Migration from docker to machine](https://circleci.com/docs/2.0/docker-to-machine/)
-* [wikipedia](https://en.wikipedia.org/wiki/Docker_(software))
-* [Travis guide](https://docs.travis-ci.com/user/docker/)
-* [get into docker](https://stackoverflow.com/questions/30172605/how-do-i-get-into-a-docker-containers-shell)
-* [SSH into docker](https://phase2.github.io/devtools/common-tasks/ssh-into-a-container/)
-* CLI reference
-  * [docker pull](https://docs.docker.com/engine/reference/commandline/pull/)
-  * [docker run](https://docs.docker.com/engine/reference/commandline/run/)
-  * [docker exec](https://docs.docker.com/engine/reference/commandline/exec/)
 
 [Build LineageOS for angler](https://wiki.lineageos.org/devices/angler/build)
 * angler tree
@@ -30,43 +16,12 @@ Android sparse image
   * [lineage wiki](https://wiki.lineageos.org/extracting_blobs_from_zips.html)
   * [aosp guide](https://source.android.com/devices/bootloader/partitions-images)
 
-Check container capabilities
+curl
 ```bash
-# https://stackoverflow.com/questions/46212787/how-to-correctly-report-available-ram-within-a-docker-container
-cat /sys/fs/cgroup/memory/memory.limit_in_bytes
-ls -Al /
-df -h
+curl -sS -LOJR 'https://...'
 ```
 
-Pacman
-```bash
-
-$update
-
-cat <<"---" | xargs $unreg || true
-  llvm-libs
-  gcc-libs
-  pcre
-  gpm
-  libpng
-  avahi
----
-
-cat <<"---" | xargs $partial
-  git rxvt-unicode-terminfo openssh nmap
-  wget tree nano vim pv xz unzip lsof pciutils tmux
-  jdk8-openjdk sudo base-devel
----
-
-echo
-$gc || true
-
-echo
-$upgrade
-
-```
-
-Locale?
+Locale
 ```
 perl: warning: Setting locale failed.
 perl: warning: Please check that your locale settings:
@@ -106,10 +61,28 @@ cd angler-opm7.181205.001/
 unzip image-angler-opm7.181205.001.zip
 ```
 
-Verify J*
+
+<details><summary>H</summary>
+
+[Docker](https://www.docker.com/)
+* Privileged is evil [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]() [<sup>O</sup>]()
+* [Migration from docker to machine](https://circleci.com/docs/2.0/docker-to-machine/)
+* [wikipedia](https://en.wikipedia.org/wiki/Docker_(software))
+* [Travis guide](https://docs.travis-ci.com/user/docker/)
+* [get into docker](https://stackoverflow.com/questions/30172605/how-do-i-get-into-a-docker-containers-shell)
+* [SSH into docker](https://phase2.github.io/devtools/common-tasks/ssh-into-a-container/)
+* CLI reference
+  * [docker pull](https://docs.docker.com/engine/reference/commandline/pull/)
+  * [docker run](https://docs.docker.com/engine/reference/commandline/run/)
+  * [docker exec](https://docs.docker.com/engine/reference/commandline/exec/)
+
+Check container capabilities
 ```bash
-archlinux-java set java-8-openjdk
-archlinux-java status
+# https://stackoverflow.com/questions/46212787/how-to-correctly-report-available-ram-within-a-docker-container
+cat /sys/fs/cgroup/memory/memory.limit_in_bytes
+ls -Al /
+df -h
 ```
 
+</details>
 
