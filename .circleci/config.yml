@@ -35,7 +35,7 @@ jobs:
           command: |
             pwd
             echo "$(nproc) $(nproc --all)" | sudo tee /m_nproc
-            sudo tee </proc/cpuinfo /m_cpuinfo
+            sudo -i lscpu | sudo -i tee /m_lscpu
 
       # https://hub.docker.com/_/archlinux/?tab=tags
       # https://stackoverflow.com/questions/28574433/do-docker-containers-retain-file-changes
@@ -166,17 +166,17 @@ jobs:
             java -version |& grep -F 1.7 &>/dev/null
             EOF
 
-      - run:
-          name: "[M] Wait for SSH"
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
+      # - run:
+      #     name: "[M] Wait for SSH"
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
 
       # - run:
       #     name: "[M] Stop"
@@ -198,7 +198,7 @@ jobs:
       - store_artifacts:
           path: /m_nproc
       - store_artifacts:
-          path: /m_cpuinfo
+          path: /m_lscpu
       # - store_artifacts:
       #     path: /c_nproc
       # - store_artifacts:
