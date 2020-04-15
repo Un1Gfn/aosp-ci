@@ -74,8 +74,15 @@ jobs:
       #     command: |
       #       # ?
 
+      # Found a cache from build ? at v1-garbage-?
+      # Size: ?
+      # Cached paths:
+      #   * /home/circleci/garbage
+      # Downloading cache archive...
+      # Validating cache...
+      # Unarchiving cache...
       - restore_cache:
-          key: v1-garbage
+          key: v1-garbage-
 
       - run:
           name: "Download (dummy)"
@@ -128,8 +135,15 @@ jobs:
       #       source build/envsetup.sh
       #       EOF
 
+      # Skipping cache generation, cache already exists for key: v1-garbage
+      # Found one created at 2020-04-15 05:51:32 +0000 UTC
+      # - save_cache:
+      #     key: v1-garbage
+      #     paths:
+      #       - ~/garbage
+
       - save_cache:
-          key: v1-garbage
+          key: v1-garbage-{{ epoch }}
           paths:
             - ~/garbage
 
