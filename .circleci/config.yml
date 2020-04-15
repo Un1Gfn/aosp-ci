@@ -82,23 +82,18 @@ jobs:
       # Validating cache...
       # Unarchiving cache...
       - restore_cache:
-          key: v1-garbage-
+          key: v2-garbage
 
       - run:
-          name: "Download (dummy)"
+          name: "Download (dummy) (overwrite)"
           command: |
-            if [ -e ~/garbage ]; then
-              [ -d ~/garbage ] || exit 1
-            else
-              mkdir -v ~/garbage
-            fi
             echo
-            ls -Alh ~/garbage
+            rm -fv ~/garbage || true
             echo
-            F="$RANDOM"
-            dd if=/dev/zero of=~/garbage/"$F" count=4096000
+            dd if=/dev/urandom of=~/garbage count=$((40*2048000)) # status=progress
             echo
-            ls -Alh ~/garbage
+            ls -l ~/garbage
+            ls -lh ~/garbage
             echo
             echo
 
@@ -143,7 +138,7 @@ jobs:
       #       - ~/garbage
 
       - save_cache:
-          key: v1-garbage-{{ epoch }}
+          key: v2-garbage-{{ epoch }}
           paths:
             - ~/garbage
 
