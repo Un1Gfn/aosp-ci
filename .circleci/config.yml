@@ -84,8 +84,10 @@ jobs:
       - restore_cache:
           key: v2-garbage
 
+      # https://circleci.com/docs/2.0/configuration-reference/#run
       - run:
           name: "Download (dummy) (overwrite)"
+          no_output_timeout: 30m # ETA 13m20s
           command: |
             echo
             rm -fv ~/garbage || true
