@@ -13,7 +13,7 @@ jobs:
     # https://circleci.com/docs/2.0/configuration-reference/#branches
     branches:
       only:
-        - chroot
+        - xenial-aosp
 
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
     # Xenial Xerus
@@ -131,9 +131,9 @@ jobs:
           name: "[C] Pacman install"
           command: |
             cat <<"---" | xargs $chroot $sync
-              git repo time rxvt-unicode-terminfo openssh sudo
+              git repo time inetutils rxvt-unicode-terminfo openssh sudo
               wget tree nano vim pv xz unzip
-              jdk7-openjdk
+              jdk8-openjdk
             ---
 
       # https://bbs.archlinux.org/viewtopic.php?id=229027
@@ -156,14 +156,14 @@ jobs:
             EOF
 
       - run:
-          name: "[C] Verify J*7"
+          name: "[C] Verify J*8"
           command: |
             cat <<EOF | $chroot_bash
             archlinux-java status
             echo
             java -version
             echo
-            java -version |& grep -F 1.7 &>/dev/null
+            java -version |& grep -F 1.8 &>/dev/null
             EOF
 
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
@@ -187,13 +187,16 @@ jobs:
               git config --$i user.email "darren19970810@gmail.com"
               git config --$i user.name "Darren Ng"
             done
+            echo
             yes | repo init --depth=1 -u https://github.com/LineageOS/android.git -b lineage-15.1
             echo
             /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -c
-            # du -hd 0 .repo
+            echo
+            du -hd 0 .repo
             echo
             df -h
             echo
+            source build/envsetup.sh
             EOF
 
       - run:
