@@ -82,17 +82,17 @@ jobs:
       # Validating cache...
       # Unarchiving cache...
       - restore_cache:
-          key: v2-garbage
+          key: v3-garbage
 
       # https://circleci.com/docs/2.0/configuration-reference/#run
       - run:
           name: "Download (dummy) (overwrite)"
-          no_output_timeout: 30m # ETA 13m20s
+          no_output_timeout: 15m # ETA ?m?s
           command: |
             echo
             rm -fv ~/garbage || true
             echo
-            dd if=/dev/urandom of=~/garbage count=$((40*2048000)) # status=progress
+            dd if=/dev/urandom of=~/garbage count=$((15*2048000)) # status=progress
             echo
             ls -l ~/garbage
             ls -lh ~/garbage
@@ -140,7 +140,7 @@ jobs:
       #       - ~/garbage
 
       - save_cache:
-          key: v2-garbage-{{ epoch }}
+          key: v3-garbage-{{ epoch }}
           paths:
             - ~/garbage
 
