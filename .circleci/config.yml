@@ -26,37 +26,28 @@ jobs:
     steps:
 
       - run:
-          name: "[M] chpasswd"
+          name: "Root password"
           command: |
             echo "root:1" | sudo chpasswd
 
       - run:
-          name: "[M] Hardware info"
+          name: "Machine info"
           command: |
-            pwd
-            echo "$(nproc) $(nproc --all)" | sudo tee /m_nproc
-            sudo -i lscpu | sudo -i tee /m_lscpu
+            echo
+            echo "$(nproc) $(nproc --all)"
+            echo
+            sudo -i lscpu
+            echo
+            df -h
+            echo
 
-      # https://hub.docker.com/_/archlinux/?tab=tags
-      # https://stackoverflow.com/questions/28574433/do-docker-containers-retain-file-changes
-      # https://stackoverflow.com/questions/2935183/bash-infinite-sleep-infinite-blocking
       - run:
           name: "[M] BASH_ENV"
           command: |
             cat <<"EOF" >"$BASH_ENV"
             #
-            # export pkg="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
-            export pkg="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages"
-            export chroot_dir="/root.x86_64"
-            export chroot="sudo -i arch-chroot $chroot_dir"
-            export chroot_bash="sudo -i arch-chroot $chroot_dir bash -eo pipefail"
-            #
-            # https://www.archlinux.org/mirrors/status/
-            export mirror='http://mirror.lty.me/archlinux/'
-            export   unreg='pacman    -D --asdeps'
-            export refresh='pacman  -Syy --noprogressbar --noconfirm'
-            export    sync='pacman -Syuu --noprogressbar --noconfirm'
-            export      gc='pacman -Rssc --noprogressbar --noconfirm $(pacman -Qdttq)'
+            export apt="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
+            # export apt="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages"
             #
             export PROJ_DIR="/root/project"
             export _JAVA_OPTIONS="-Xmx$RAM"
@@ -64,192 +55,109 @@ jobs:
             EOF
             source "$BASH_ENV"
 
+      # https://packages.ubuntu.com/
+      # git repo time inetutils rxvt-unicode-terminfo openssh sudo
+      # wget tree nano vim pv xz unzip
       # - run:
       #     name: "[M] apt"
       #     command: |
       #       sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
       #       sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-      #       $pkg update
-      #       $pkg install tree pciutils tmux duc
+      #       $apt update
+      #       cat <<"EOF" | xargs $apt
+      #         tree duc
+      #         openjdk-8-jdk
+      #       EOF
+
+      # - run:
+      #     name: "Verify J*8"
+      #     command: |
+      #       # ?
+
+      - restore_cache:
+          key: v1-garbage
 
       - run:
-          name: "[M] arch-install-scripts"
+          name: "Download (dummy)"
           command: |
-            pwd
-            git clone https://git.archlinux.org/arch-install-scripts.git
-            pushd arch-install-scripts
-            make PREFIX=/usr/local arch-chroot
-            sudo install -v -m700 ./arch-chroot /usr/local/bin/arch-chroot
-            popd
-            rm -rf arch-install-scripts
-
-      - run:
-          name: "[M] Pull and populate chroot from mirror"
-          command: |
-            pwd
-            curl -sS -LOJR "$mirror/iso/2020.04.01/archlinux-bootstrap-2020.04.01-x86_64.tar.gz"
-            curl -sS -LOJR "$mirror/iso/2020.04.01/sha1sums.txt"
-            sha1sum -c --ignore-missing sha1sums.txt
-            sudo tar xf *bootstrap*tar.gz -C /
-            sudo -i mount -v --bind "$chroot_dir" "$chroot_dir"
-
-      # https://wiki.archlinux.org/index.php/Installation_guide#Configure_the_system
-      - run:
-          name: "[M/C] hosts, mirror, TZ and LANG"
-          command: |
-            cat /etc/hosts
-            sudo -i cp -v /etc/hosts "$chroot_dir/etc/hosts"
-            echo 'Server = '"$mirror"'/$repo/os/$arch' | sudo -i tee "$chroot_dir/etc/pacman.d/mirrorlist"
+            if [ -e ~/garbage ]; then
+              [ -d ~/garbage ] || exit 1
+            else
+              mkdir -v ~/garbage
+            fi
             echo
-            cat <<EOF | $chroot_bash
-            ln -v -sf /usr/share/zoneinfo/UTC /etc/localtime
-            echo 'LANG=C' >/etc/locale.conf
-            EOF
-
-      - run:
-          name: "[C] Pacman init"
-          command: |
-            $chroot pacman --version
-            $chroot pacman-key --init
-            $chroot pacman-key --populate archlinux
-            $chroot $refresh
-            cat <<"---" | xargs $chroot $unreg || true
-              llvm-libs gcc-libs
-              pcre gpm libpng avahi glib2
-            ---
-            echo "$gc" | $chroot_bash || true
-            $chroot $sync
-            $chroot $sync base base-devel
-
-      - run:
-          name: "[C] Locale"
-          command: |
-            echo 'en_US.UTF-8 UTF-8' | sudo -i tee "$chroot_dir/etc/locale.gen"
-            $chroot locale-gen
-
-      - run:
-          name: "[C] Pacman install"
-          command: |
-            cat <<"---" | xargs $chroot $sync
-              git repo time inetutils rxvt-unicode-terminfo openssh sudo
-              wget tree nano vim pv xz unzip
-              jdk8-openjdk
-            ---
-
-      # https://bbs.archlinux.org/viewtopic.php?id=229027
-      # http://allanmcrae.com/2015/01/replacing-makepkg-asroot/
-      - run:
-          name: "[C] AUR"
-          command: |
-            echo "nobody ALL=(ALL) NOPASSWD: /usr/bin/pacman" | sudo -i tee "$chroot_dir/etc/sudoers.d/makepkg"
-            cat <<"EOF" | $chroot_bash
-            pwd
-            pkg="android-simg2img"
-            git clone "https://aur.archlinux.org/$pkg.git"
-            chown -R nobody:nobody "$pkg"
-            pushd "$pkg"
-            sudo -u nobody makepkg -si --noconfirm --needed --noprogressbar
-            # pacman -U --noprogressbar --noconfirm  *.pkg.tar.xz
-            popd
-            rm -rf "$pkg"
-            unset pkg
-            EOF
-
-      - run:
-          name: "[C] Verify J*8"
-          command: |
-            cat <<EOF | $chroot_bash
-            archlinux-java status
+            ls -Alh ~/garbage
             echo
-            java -version
+            F="$RANDOM"
+            dd if=/dev/zero of=~/garbage/"$F" count=4096000
             echo
-            java -version |& grep -F 1.8 &>/dev/null
-            EOF
+            ls -Alh ~/garbage
+            echo
 
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
       # https://source.android.com/setup/develop/repo
-      # wall clock time - 18:41.30
-      # 13G
-      - run:
-          name: "[C] Repo"
-          command: |
-            echo
-            sudo -i df -h
-            echo
-            cat <<"EOF" | $chroot_bash
-            pwd
-            echo
-            df -h
-            echo
-            mkdir -p /lineage
-            cd /lineage
-            for i in system global; do
-              git config --$i user.email "darren19970810@gmail.com"
-              git config --$i user.name "Darren Ng"
-            done
-            echo
-            yes | repo init --depth=1 -u https://github.com/LineageOS/android.git -b lineage-15.1
-            echo
-            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -c
-            echo
-            du -hd 0 .repo
-            echo
-            df -h
-            echo
-            source build/envsetup.sh
-            EOF
+      # wall clock time - 18:41.30 # 13GiB # lineage
+      # wall clock time - ??:??.?? # ??GiB # aosp
+      # - run:
+      #     name: "Download"
+      #     command: |
+      #       echo
+      #       sudo -i df -h
+      #       echo
+      #       cat <<"EOF" | $chroot_bash
+      #       pwd
+      #       echo
+      #       df -h
+      #       echo
+      #       mkdir -p /lineage
+      #       cd /lineage
+      #       for i in system global; do
+      #         git config --$i user.email "darren19970810@gmail.com"
+      #         git config --$i user.name "Darren Ng"
+      #       done
+      #       echo
+      #       yes | repo init --depth=1 -u https://github.com/LineageOS/android.git -b lineage-15.1
+      #       echo
+      #       /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -c
+      #       echo
+      #       du -hd 0 .repo
+      #       echo
+      #       df -h
+      #       echo
+      #       source build/envsetup.sh
+      #       EOF
 
-      - run:
-          name: "[C] Steal blobs"
-          command: |
-            mkdir -p /angler
-            cd /angler
-            curl -# -LOJR "https://dl.google.com/dl/android/aosp/angler-opm7.181205.001-factory-b75ce068.zip"
-            sum0="b75ce068f23a0e793805f80fccbc081eca52861ef5eb080c47f502de4c3f9713"
-            sum1="$(sha256sum angler-opm7.181205.001-factory-b75ce068.zip | cut -d' ' -f1)"
-            if [ "$sum0" = "$sum1" ]; then
-              echo checksum match
-            else
-              echo checksum mismatch
-              /usr/bin/false
-            fi
-            unzip angler-opm*-factory-*.zip
-            cd angler-opm*/
-            unzip image-angler-opm*.zip
-            echo
-            find . -iname '*img*'
-            echo
-            file *img
-            echo
-            [ -z "$(mount | grep mnt)" ] || exit 1
-            for i in system vendor; do
-              simg2img "$i".img "$i".raw.img
-              mkdir -v /"$i"
-              mount -v "$i".raw.img /"$i"
-            done
+      - save_cache:
+          key: v1-garbage
+          paths:
+            - ~/garbage
 
-            mkdir -v /device
-            cd /device
-            git clone https://github.com/LineageOS/android_device_huawei_angler.git
+      # - run:
+      #     name: "Free up space"
+      #     command: |
+      #       df
+      #       du
+      #       https://www.google.com/search?q=apt+clean+cache&oq=apt+clean+cache
+      #       $pkg purge
+      #       rm -rf .repo
+      #       rm -rf /usr/local
 
-            rm -rf /device
-            rmdir -v /system
-            rmdir -v /vendor
-            rm -rf /angler
+      # - run:
+      #     name: "Build"
+      #     command: |
+      #       source build/envsetup.sh
 
-            EOF
-
-      - run:
-          name: "[M] Wait for SSH"
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
+      # - run:
+      #     name: "[M] Wait for SSH"
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
 
       # - run:
       #     name: "[M] Stop"
@@ -258,21 +166,8 @@ jobs:
 
       # - checkout # github -> /root/project
 
-      # - run:
-      #     name: "[M/C] free up space"
-      #     command: |
-      #       df
-      #       du
-      #       https://www.google.com/search?q=apt+clean+cache&oq=apt+clean+cache
-      #       $pkg purge
-      #       $chroot $gc
-
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
-      - store_artifacts:
-          path: /m_nproc
-      - store_artifacts:
-          path: /m_lscpu
       # - store_artifacts:
-      #     path: /c_nproc
+      #     path: /nproc
       # - store_artifacts:
-      #     path: /c_cpuinfo
+      #     path: /lscpu
