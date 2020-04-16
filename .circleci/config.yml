@@ -65,7 +65,7 @@ jobs:
             $apt update
             $apt autoremove --purge
             cat <<"EOF" | xargs $apt install
-            tree duc
+            tree duc vim
             git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
             EOF
 
@@ -120,6 +120,35 @@ jobs:
             echo
             echo
 
+      - run:
+          name: "mkdir"
+          command: mkdir /home/circleci/aosp
+
+      # https://source.android.com/setup/build/requirements#binaries
+      # https://source.android.com/setup/build/downloading#obtaining-proprietary-binaries
+      # https://developers.google.com/android/drivers#angleropm7.181205.001
+      - run:
+          name: "Device binaries"
+          working_directory: /home/circleci/aosp/
+          command: |
+            curl -sS -LOJR https://dl.google.com/dl/android/aosp/huawei-angler-opm7.181205.001-52ed73ce.tgz
+            curl -sS -LOJR https://dl.google.com/dl/android/aosp/qcom-angler-opm7.181205.001-d20950d9.tgz
+            cat <<"---" | sha256sum --strict -c -
+              2eb9a77de059739d33c7fad07e34034f03a93d70eea39460bb0d9278e5763053  huawei-angler-opm7.181205.001-52ed73ce.tgz
+              78222d6c627020d8312477f647253b37569882ebdfe527207f39074dc05fc6a1  qcom-angler-opm7.181205.001-d20950d9.tgz
+            ---
+            tar xfv huawei-angler-opm*.tgz
+            PATH0="$PATH"
+            PATH="$PWD:$PATH"
+            ln -sv /bin/cat more
+            hash -r
+            type more
+            file $(which more)
+            echo -ne "\nI ACCEPT\n" | ./extract-huawei-angler.sh
+            rm -v more
+            PATH="$PATH0"
+            hash -r
+
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
       # https://source.android.com/setup/develop/repo
       # https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
@@ -128,9 +157,6 @@ jobs:
       - run:
           name: "Download"
           command: |
-            cd ~
-            mkdir aosp
-            cd aosp
             for i in system global; do
               git config --$i user.email "darren19970810@gmail.com"
               git config --$i user.name "Darren Ng"
