@@ -151,7 +151,7 @@ jobs:
           command: mkdir /home/circleci/aosp
 
       - run:
-          name: "[M] Wait for SSH"
+          name: "Wait for SSH"
           when: always
           command: |
             echo
@@ -172,12 +172,10 @@ jobs:
           name: "Download AOSP"
           working_directory: /home/circleci/aosp/
           command: |
-            for i in system global; do
-              git config --$i user.email "darren19970810@gmail.com"
-              git config --$i user.name "Darren Ng"
-            done
+            git config --global user.email "darren19970810@gmail.com"
+            git config --global user.name "Darren Ng"
             echo
-            yes | repo init --depth=1 -u https://android.googlesource.com/platform/manifest -b refs/tags/android-8.1.0_r52
+            yes | repo init --depth=1 -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52
             echo
             /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -j3 -c --depth=1
             echo
