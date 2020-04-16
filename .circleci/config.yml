@@ -128,19 +128,20 @@ jobs:
           name: "AOSP dir"
           command: mkdir /home/circleci/aosp
 
-      - run:
-          name: "Wait for SSH"
-          when: always
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
+      # - run:
+      #     name: "Wait for SSH"
+      #     when: always
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
 
+      # https://gist.github.com/earthgecko/3089509
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
       # https://source.android.com/setup/develop/repo
       # https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
@@ -153,10 +154,26 @@ jobs:
           no_output_timeout: 60m
           working_directory: /home/circleci/aosp/
           command: |
-            git config --global user.email "darren19970810@gmail.com"
-            git config --global user.name "Darren Ng"
+            function A {
+              [ "$#" -ne 1 ] && set -- 1
+              cat /dev/urandom | tr -dc    'A-Z' | fold -w "$1" | head -n 1
+            }
+            function a {
+              [ "$#" -ne 1 ] && set -- 1
+              cat /dev/urandom | tr -dc    'a-z' | fold -w "$1" | head -n 1
+            }
+            function x {
+              [ "$#" -ne 1 ] && set -- 1
+              cat /dev/urandom | tr -dc 'a-z0-9' | fold -w "$1" | head -n 1
+            }
+            git config --global user.email "$(a)$(x 10)@$(a 5).org"
+            git config --global user.name "$(A)$(a 5) $(A)$(a)"
+            unset -f A
+            unset -f a
+            unset -f x
+            cat ~/.gitconfig
             echo
-            yes | repo init -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52 -c --depth=1
+            yes | repo init -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52 -c --depth=1 --partial-clone || true
             echo
             free -h
             echo
