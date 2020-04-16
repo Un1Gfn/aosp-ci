@@ -40,18 +40,6 @@ jobs:
             EOF
             source "$BASH_ENV"
 
-      - run:
-          name: "[M] Wait for SSH"
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
-
       # https://packages.ubuntu.com/
       # git repo time inetutils rxvt-unicode-terminfo openssh sudo
       # wget tree nano vim pv xz unzip
@@ -124,34 +112,17 @@ jobs:
           name: "mkdir"
           command: mkdir /home/circleci/aosp
 
-      # https://source.android.com/setup/build/requirements#binaries
-      # https://source.android.com/setup/build/downloading#obtaining-proprietary-binaries
-      # https://developers.google.com/android/drivers#angleropm7.181205.001
       - run:
-          name: "Device binaries"
-          working_directory: /home/circleci/aosp/
+          name: "[M] Wait for SSH"
           command: |
-            curl -sS -LOJR https://dl.google.com/dl/android/aosp/huawei-angler-opm7.181205.001-52ed73ce.tgz
-            curl -sS -LOJR https://dl.google.com/dl/android/aosp/qcom-angler-opm7.181205.001-d20950d9.tgz
-            cat <<"---" | sha256sum --strict -c -
-              2eb9a77de059739d33c7fad07e34034f03a93d70eea39460bb0d9278e5763053  huawei-angler-opm7.181205.001-52ed73ce.tgz
-              78222d6c627020d8312477f647253b37569882ebdfe527207f39074dc05fc6a1  qcom-angler-opm7.181205.001-d20950d9.tgz
-            ---
-            tar xfv huawei-angler-opm*.tgz
-            rm -v huawei-angler-opm*.tgz
-            PATH0="$PATH"
-            PATH="$PWD:$PATH"
-            ln -sv /bin/cat more
-            hash -r
-            type more
-            file $(which more)
-            echo -ne "\nI ACCEPT\n" | ./extract-huawei-angler.sh
-            rm -v extract-huawei-angler.sh
-            rm -v more
-            PATH="$PATH0"
-            hash -r
-            tar xfv qcom-angler-opm*.tgz
-            rm -v qcom-angler-opm*.tgz
+            echo
+            i=0
+            while true; do
+              sleep 60
+              i=$((i+1))
+              echo "$i min"
+            done
+            /usr/bin/false
 
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
       # https://source.android.com/setup/develop/repo
@@ -159,7 +130,8 @@ jobs:
       # https://stackoverflow.com/a/19636869
       # wall clock time - ??:??.?? # ??GiB # aosp
       - run:
-          name: "Download"
+          name: "Download AOSP"
+          working_directory: /home/circleci/aosp/
           command: |
             for i in system global; do
               git config --$i user.email "darren19970810@gmail.com"
@@ -174,6 +146,37 @@ jobs:
             echo
             echo
             EOF
+
+      # https://source.android.com/setup/build/requirements#binaries
+      # https://source.android.com/setup/build/downloading#obtaining-proprietary-binaries
+      # https://developers.google.com/android/drivers#angleropm7.181205.001
+      - run:
+          name: "Download device binaries"
+          working_directory: /home/circleci/aosp/
+          command: |
+            curl -sS -LOJR https://dl.google.com/dl/android/aosp/huawei-angler-opm7.181205.001-52ed73ce.tgz
+            curl -sS -LOJR https://dl.google.com/dl/android/aosp/qcom-angler-opm7.181205.001-d20950d9.tgz
+            cat <<"---" | sha256sum --strict -c -
+              2eb9a77de059739d33c7fad07e34034f03a93d70eea39460bb0d9278e5763053  huawei-angler-opm7.181205.001-52ed73ce.tgz
+              78222d6c627020d8312477f647253b37569882ebdfe527207f39074dc05fc6a1  qcom-angler-opm7.181205.001-d20950d9.tgz
+            ---
+            tar xfv huawei-angler-opm*.tgz
+            tar xfv qcom-angler-opm*.tgz
+            rm -v huawei-angler-opm*.tgz
+            rm -v qcom-angler-opm*.tgz
+            PATH0="$PATH"
+            PATH="$PWD:$PATH"
+            ln -sv /bin/cat more
+            hash -r
+            type more
+            file $(which more)
+            echo -ne "\nI ACCEPT\n" | ./extract-huawei-angler.sh
+            echo -ne "\nI ACCEPT\n" | ./extract-qcom-angler.sh
+            rm -v extract-huawei-angler.sh
+            rm -v extract-qcom-angler.sh
+            rm -v more
+            PATH="$PATH0"
+            hash -r
 
       - run:
           name: "[B] Disk space"

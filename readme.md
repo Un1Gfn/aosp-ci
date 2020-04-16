@@ -8,6 +8,7 @@ dpkg
 * `-S FILE` which package provide file
 
 [AOSP](https://source.android.com/)
+* [repo](https://gerrit.googlesource.com/git-repo/)
 * [Android Community and contacts](https://source.android.com/setup/community.html)
 * [Google Git](https://android.googlesource.com/)
 * [Android Code Search](https://cs.android.com/)
