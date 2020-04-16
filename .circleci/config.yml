@@ -150,27 +150,29 @@ jobs:
           name: "AOSP dir"
           command: mkdir /home/circleci/aosp
 
-      - run:
-          name: "Wait for SSH"
-          when: always
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
+      # - run:
+      #     name: "Wait for SSH"
+      #     when: always
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
 
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
       # https://source.android.com/setup/develop/repo
       # https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
       # https://stackoverflow.com/a/19636869
-      # fetch - ?m?s
-      # update working tree - ?m?s
+      #                     fetch   04:39.59   .repo/ 156M
+      #       update working tree   27:01.87   .repo/  13G   ~/aosp/ 43G
+      #     extract .repo w/ sync   10:34.70   .repo/  13G   ~/aosp/ 43G
       - run:
           name: "Download AOSP"
+          no_output_timeout: 60m
           working_directory: /home/circleci/aosp/
           command: |
             git config --global user.email "darren19970810@gmail.com"
@@ -187,12 +189,24 @@ jobs:
             [ "$(nproc --all)" -eq 2 ] || exit
             /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -n -c -q -j2
             echo
-            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -l
+            du -hd 0 .repo
+            echo
+            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -l -c -q -j2
             echo
             du -hd 0 .repo
             echo
+            du -hd 0 .
+            echo
             echo
             EOF
+
+      - run:
+          name: "[B] Disk space"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            echo
 
       # https://source.android.com/setup/build/requirements#binaries
       # https://source.android.com/setup/build/downloading#obtaining-proprietary-binaries
@@ -224,14 +238,6 @@ jobs:
             rm -v more
             PATH="$PATH0"
             hash -r
-
-      - run:
-          name: "[B] Disk space"
-          command: |
-            echo
-            sudo -i df -h
-            echo
-            echo
 
       # - run:
       #     name: "Free up space"
