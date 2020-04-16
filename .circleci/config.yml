@@ -63,54 +63,95 @@ jobs:
             sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
             sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5DC22404A6F9F1CA
             $apt update
-            $apt purge  openjdk-8-jdk openjdk-8-jre openjdk-8-jre-headless
             $apt autoremove --purge
             cat <<"EOF" | xargs $apt install
             tree duc
             git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
             EOF
 
-      - run:
-          name: "Make sure there is no J*"
-          command: |
-            [ -z "$(dpkg -l|grep -e jdk -e jre -e headless -e java[^s])" ] || echo "err"
-
       # - run:
       #     name: "Verify J*8"
       #     command: |
       #       # ?
-
-      # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
-      # https://source.android.com/setup/develop/repo
-      # wall clock time - ??:??.?? # ??GiB # aosp
       - run:
-          name: "Download"
+          name: "Make sure there is no J*"
+          command: |
+            $apt purge openjdk-8-jdk openjdk-8-jre openjdk-8-jre-headless
+            $apt autoremove --purge
+            [ -z "$(dpkg -l|grep -e jdk -e jre -e headless -e java[^s])" ] || echo "err"
+
+      # https://unix.stackexchange.com/questions/410579/change-the-python3-default-version-in-ubuntu
+      - run:
+          name: "Make sure there is only python 3 for repo and no python 2"
+          command: |
+            rm -rf /opt/circleci/.pyenv
+            $apt purge python python2.7 python2.7-minimal
+            $apt autoremove --purge
+            $apt install python3
+            hash -r
+            sudo -i update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+            sudo -i update-alternatives --set python /usr/bin/python3
+            hash -r
+            [ -n "$(python --version | grep -Fe 'Python 3.')" ] || exit 1
+            python2 &>/dev/null && exit 1
+
+      - run:
+          name: "Install repo"
+          command: |
+            install -m755 /dev/null ~/bin/test2
+            cat <<"EOF" >~/bin/test2
+              #!/bin/bash
+              echo $((740+37))
+            EOF
+            test2
+            rm -v ~/bin/test2
+            curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+            chmod a+x ~/bin/repo
+            file ~/bin/repo
+            ls -l ~/bin/repo
+            gpg --recv-key 8BB9AD793E8E6153AF0F9A4416530D5E920F5C65
+            curl https://storage.googleapis.com/git-repo-downloads/repo.asc | gpg --verify - ~/bin/repo
+
+      - run:
+          name: "[A] Disk space"
           command: |
             echo
             sudo -i df -h
             echo
-            cat <<"EOF" | $chroot_bash
-            pwd
             echo
-            df -h
-            echo
-            mkdir -p /lineage
-            cd /lineage
+
+      # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
+      # https://source.android.com/setup/develop/repo
+      # https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
+      # https://stackoverflow.com/a/19636869
+      # wall clock time - ??:??.?? # ??GiB # aosp
+      - run:
+          name: "Download"
+          command: |
+            cd ~
+            mkdir aosp
+            cd aosp
             for i in system global; do
               git config --$i user.email "darren19970810@gmail.com"
               git config --$i user.name "Darren Ng"
             done
             echo
-            yes | repo init --depth=1 -u https://github.com/LineageOS/android.git -b lineage-15.1
+            yes | repo init --depth=1 -u https://android.googlesource.com/platform/manifest -b refs/tags/android-8.1.0_r52
             echo
-            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -c
+            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -j3 -c --depth=1
             echo
             du -hd 0 .repo
             echo
-            df -h
             echo
-            source build/envsetup.sh
             EOF
+
+      - run:
+          name: "[B] Disk space"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            echo
 
       # - run:
       #     name: "Free up space"
@@ -122,11 +163,13 @@ jobs:
       #       rm -rf .repo
       #       rm -rf /usr/local
 
-      # - run:
-      #     name: "Build"
-      #     command: |
-      #       source build/envsetup.sh
-      #       lunch
+      - run:
+          name: "Build"
+          working_directory: /home/circleci/aosp/
+          command: |
+            source build/envsetup.sh
+            lunch angler
+            m
 
       # - run:
       #     name: "[M] Stop"

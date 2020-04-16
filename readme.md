@@ -2,6 +2,10 @@
 CircleCI
 * [Pipelines](https://app.circleci.com/pipelines/github/Un1Gfn/lineage)
 * [Caching](https://circleci.com/docs/2.0/caching/)
+* [step - run - WD/shell](https://circleci.com/docs/2.0/configuration-reference/#run)
+
+dpkg
+* `-S FILE` which package provide file
 
 [AOSP](https://source.android.com/)
 * [Android Community and contacts](https://source.android.com/setup/community.html)
