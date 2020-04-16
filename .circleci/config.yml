@@ -26,6 +26,25 @@ jobs:
 
     steps:
 
+      # - run:
+      #     name: Check if SSH is running
+      #     command: |
+      #       sudo -i pgrep -a sshd
+      #       [ -n "$(sudo -i pgrep -a sshd)" ] || exit 1
+
+      - run:
+          name: "Remove bloat"
+          working_directory: /opt/
+          command: |
+            sudo rm -rf firefox
+            sudo rm -rf google/chrome
+            sudo rmdir google
+            sudo rm -rf circleci/.nvm
+            sudo rm -rf circleci/.rvm
+            sudo rm -rf circleci/.pyenv
+            sudo rmdir circleci
+            sudo rm -rf containerd
+
       - run:
           name: "BASH_ENV"
           command: |
@@ -64,18 +83,19 @@ jobs:
       - run:
           name: "Make sure there is no J*"
           command: |
-            $apt purge openjdk-8-jdk openjdk-8-jre openjdk-8-jre-headless
+            $apt purge ant openjdk-8-jdk openjdk-8-jre openjdk-8-jre-headless
             $apt autoremove --purge
             [ -z "$(dpkg -l|grep -e jdk -e jre -e headless -e java[^s])" ] || echo "err"
 
       # https://unix.stackexchange.com/questions/410579/change-the-python3-default-version-in-ubuntu
+      # https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa
       - run:
-          name: "Kill python"
+          name: "Kill python* and get deadsnakes/python3.6"
           command: |
             # 
             sudo -i add-apt-repository -y ppa:deadsnakes/ppa # Depends on python(3?)
             # 
-            rm -rf /opt/circleci/.pyenv
+            rm -rf /opt/circleci/.pyenv || true
             for py in \
               python{,2{,.7},3{,.5}}{,-minimal} \
               libpython{,2{,.7},3{,.5}}{-stdlib,-minimal}
@@ -104,10 +124,10 @@ jobs:
           name: "Install repo"
           command: |
             install -m755 /dev/null ~/bin/test2
-            cat <<"EOF" >~/bin/test2
+            cat <<"---" >~/bin/test2
               #!/bin/bash
               echo $((740+37))
-            EOF
+            ---
             test2
             rm -v ~/bin/test2
             curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
@@ -127,7 +147,7 @@ jobs:
             echo
 
       - run:
-          name: "mkdir"
+          name: "AOSP dir"
           command: mkdir /home/circleci/aosp
 
       - run:
