@@ -167,7 +167,8 @@ jobs:
       # https://source.android.com/setup/develop/repo
       # https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
       # https://stackoverflow.com/a/19636869
-      # wall clock time - ??:??.?? # ??GiB # aosp
+      # fetch - ?m?s
+      # update working tree - ?m?s
       - run:
           name: "Download AOSP"
           working_directory: /home/circleci/aosp/
@@ -175,9 +176,18 @@ jobs:
             git config --global user.email "darren19970810@gmail.com"
             git config --global user.name "Darren Ng"
             echo
-            yes | repo init --depth=1 -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52
+            yes | repo init -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52 -c --depth=1 --partial-clone
             echo
-            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -j3 -c --depth=1
+            free -h
+            echo
+            sudo -i sync
+            echo 3 | sudo tee /proc/sys/vm/drop_caches
+            free -h
+            echo
+            [ "$(nproc --all)" -eq 2 ] || exit
+            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -n -c -q -j2
+            echo
+            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -l
             echo
             du -hd 0 .repo
             echo
