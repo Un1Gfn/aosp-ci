@@ -72,6 +72,9 @@ jobs:
       - run:
           name: "Kill python"
           command: |
+            # 
+            sudo -i add-apt-repository -y ppa:deadsnakes/ppa # Depends on python(3?)
+            # 
             rm -rf /opt/circleci/.pyenv
             for py in \
               python{,2{,.7},3{,.5}}{,-minimal} \
@@ -80,12 +83,22 @@ jobs:
               $apt purge "$py" || true
             done
             $apt autoremove --purge
-            sh -c "python" && exit 1
-            sh -c "python2" && exit 1
-            sh -c "python3" && exit 1
-            [ -n "$(dpkg -l | grep python)" ] || exit 1
-            
-            [ -n "$(python --version | grep -Fe 'Python 3.')" ] || exit 1
+            # 
+            sh -c "python  --version" && exit 1
+            sh -c "python2 --version" && exit 1
+            sh -c "python3 --version" && exit 1
+            [ -z "$(dpkg -l | grep python)" ] || exit 1
+            # 
+            $apt update
+            $apt install python3.6
+            hash -r
+            sudo -i update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
+            sudo -i update-alternatives --install /usr/bin/python  python  /usr/bin/python3.6 1
+            sudo -i update-alternatives --set python3 /usr/bin/python3.6
+            sudo -i update-alternatives --set python  /usr/bin/python3.6
+            hash -r
+            python  --version | grep -Fe 'Python 3.6' || exit 1
+            python3 --version | grep -Fe 'Python 3.6' || exit 1
 
       - run:
           name: "Install repo"
