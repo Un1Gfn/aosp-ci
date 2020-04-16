@@ -13,8 +13,8 @@ jobs:
     # https://circleci.com/docs/2.0/configuration-reference/#branches
     branches:
       only:
-        # - xenial-aosp
-        - placeholder
+        - xenial-aosp
+        # - placeholder
 
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
     # Xenial Xerus
@@ -27,23 +27,7 @@ jobs:
     steps:
 
       - run:
-          name: "Root password"
-          command: |
-            echo "root:1" | sudo chpasswd
-
-      - run:
-          name: "Machine info"
-          command: |
-            echo
-            echo "$(nproc) $(nproc --all)"
-            echo
-            sudo -i lscpu
-            echo
-            df -h
-            echo
-
-      - run:
-          name: "[M] BASH_ENV"
+          name: "BASH_ENV"
           command: |
             cat <<"EOF" >"$BASH_ENV"
             #
@@ -56,34 +40,38 @@ jobs:
             EOF
             source "$BASH_ENV"
 
+      - run:
+          name: "[M] Wait for SSH"
+          command: |
+            echo
+            i=0
+            while true; do
+              sleep 60
+              i=$((i+1))
+              echo "$i min"
+            done
+            /usr/bin/false
+
       # https://packages.ubuntu.com/
       # git repo time inetutils rxvt-unicode-terminfo openssh sudo
       # wget tree nano vim pv xz unzip
-      # - run:
-      #     name: "[M] apt"
-      #     command: |
-      #       sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-      #       sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-      #       $apt update
-      #       cat <<"EOF" | xargs $apt
-      #         tree duc
-      #         openjdk-8-jdk
-      #       EOF
+      # https://source.android.com/setup/build/initializing#installing-required-packages-ubuntu-1404
+      # https://android.googlesource.com/platform/build/+/master/tools/docker/Dockerfile
+      - run:
+          name: "apt"
+          command: |
+            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+            $apt update
+            cat <<"EOF" | xargs $apt
+              tree duc
+              git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
+            EOF
 
       # - run:
       #     name: "Verify J*8"
       #     command: |
       #       # ?
-
-      # Found a cache from build ? at v1-garbage-?
-      # Size: ?
-      # Cached paths:
-      #   * /home/circleci/garbage
-      # Downloading cache archive...
-      # Validating cache...
-      # Unarchiving cache...
-      - restore_cache:
-          key: v3-garbage
 
       # https://circleci.com/docs/2.0/configuration-reference/#run
       - run:
@@ -102,48 +90,35 @@ jobs:
 
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
       # https://source.android.com/setup/develop/repo
-      # wall clock time - 18:41.30 # 13GiB # lineage
       # wall clock time - ??:??.?? # ??GiB # aosp
-      # - run:
-      #     name: "Download"
-      #     command: |
-      #       echo
-      #       sudo -i df -h
-      #       echo
-      #       cat <<"EOF" | $chroot_bash
-      #       pwd
-      #       echo
-      #       df -h
-      #       echo
-      #       mkdir -p /lineage
-      #       cd /lineage
-      #       for i in system global; do
-      #         git config --$i user.email "darren19970810@gmail.com"
-      #         git config --$i user.name "Darren Ng"
-      #       done
-      #       echo
-      #       yes | repo init --depth=1 -u https://github.com/LineageOS/android.git -b lineage-15.1
-      #       echo
-      #       /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -c
-      #       echo
-      #       du -hd 0 .repo
-      #       echo
-      #       df -h
-      #       echo
-      #       source build/envsetup.sh
-      #       EOF
-
-      # Skipping cache generation, cache already exists for key: v1-garbage
-      # Found one created at 2020-04-15 05:51:32 +0000 UTC
-      # - save_cache:
-      #     key: v1-garbage
-      #     paths:
-      #       - ~/garbage
-
-      - save_cache:
-          key: v3-garbage-{{ epoch }}
-          paths:
-            - ~/garbage
+      - run:
+          name: "Download"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            cat <<"EOF" | $chroot_bash
+            pwd
+            echo
+            df -h
+            echo
+            mkdir -p /lineage
+            cd /lineage
+            for i in system global; do
+              git config --$i user.email "darren19970810@gmail.com"
+              git config --$i user.name "Darren Ng"
+            done
+            echo
+            yes | repo init --depth=1 -u https://github.com/LineageOS/android.git -b lineage-15.1
+            echo
+            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -c
+            echo
+            du -hd 0 .repo
+            echo
+            df -h
+            echo
+            source build/envsetup.sh
+            EOF
 
       # - run:
       #     name: "Free up space"
@@ -159,18 +134,7 @@ jobs:
       #     name: "Build"
       #     command: |
       #       source build/envsetup.sh
-
-      # - run:
-      #     name: "[M] Wait for SSH"
-      #     command: |
-      #       echo
-      #       i=0
-      #       while true; do
-      #         sleep 60
-      #         i=$((i+1))
-      #         echo "$i min"
-      #       done
-      #       /usr/bin/false
+      #       lunch
 
       # - run:
       #     name: "[M] Stop"
