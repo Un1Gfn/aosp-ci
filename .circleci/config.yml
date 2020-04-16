@@ -81,7 +81,7 @@ jobs:
             sudo -i update-alternatives --set python /usr/bin/python3
             hash -r
             [ -n "$(python --version | grep -Fe 'Python 3.')" ] || exit 1
-            python2 &>/dev/null && exit 1
+            type python2 && exit 1
 
       - run:
           name: "Install repo"
@@ -99,6 +99,7 @@ jobs:
             ls -l ~/bin/repo
             gpg --recv-key 8BB9AD793E8E6153AF0F9A4416530D5E920F5C65
             curl https://storage.googleapis.com/git-repo-downloads/repo.asc | gpg --verify - ~/bin/repo
+            hash -r
 
       - run:
           name: "[A] Disk space"
@@ -114,6 +115,7 @@ jobs:
 
       - run:
           name: "[M] Wait for SSH"
+          when: always
           command: |
             echo
             i=0
