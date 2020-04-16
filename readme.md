@@ -1,5 +1,7 @@
 
-CircleCI [Pipelines](https://app.circleci.com/pipelines/github/Un1Gfn/lineage)
+CircleCI
+* [Pipelines](https://app.circleci.com/pipelines/github/Un1Gfn/lineage)
+* [Caching](https://circleci.com/docs/2.0/caching/)
 
 [AOSP](https://source.android.com/)
 * [Android Community and contacts](https://source.android.com/setup/community.html)
@@ -12,7 +14,7 @@ Nexus 6P
 * [XDA](https://forum.xda-developers.com/nexus-6p)
 * [kernel](https://forum.xda-developers.com/nexus-6p/help/how-to-make-angler-build-t3262968/page2)
 
-Android sparse image
+[Partitions and images](https://source.android.com/devices/bootloader/partitions-images)
   * [android-simg2img](https://aur.archlinux.org/packages/android-simg2img/)
   * [simg-tools](https://aur.archlinux.org/packages/simg-tools/)
   * [lineage wiki](https://wiki.lineageos.org/extracting_blobs_from_zips.html)

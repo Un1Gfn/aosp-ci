@@ -61,32 +61,24 @@ jobs:
           name: "apt"
           command: |
             sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
-            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 78BD65473CB3BD13
+            sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5DC22404A6F9F1CA
             $apt update
-            cat <<"EOF" | xargs $apt
-              tree duc
-              git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
+            $apt purge  openjdk-8-jdk openjdk-8-jre openjdk-8-jre-headless
+            $apt autoremove --purge
+            cat <<"EOF" | xargs $apt install
+            tree duc
+            git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
             EOF
+
+      - run:
+          name: "Make sure there is no J*"
+          command: |
+            [ -z "$(dpkg -l|grep -e jdk -e jre -e headless -e java[^s])" ] || echo "err"
 
       # - run:
       #     name: "Verify J*8"
       #     command: |
       #       # ?
-
-      # https://circleci.com/docs/2.0/configuration-reference/#run
-      - run:
-          name: "Download (dummy) (overwrite)"
-          no_output_timeout: 15m # ETA ?m?s
-          command: |
-            echo
-            rm -fv ~/garbage || true
-            echo
-            dd if=/dev/urandom of=~/garbage count=$((15*2048000)) # status=progress
-            echo
-            ls -l ~/garbage
-            ls -lh ~/garbage
-            echo
-            echo
 
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
       # https://source.android.com/setup/develop/repo
