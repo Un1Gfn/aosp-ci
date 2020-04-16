@@ -138,6 +138,7 @@ jobs:
               78222d6c627020d8312477f647253b37569882ebdfe527207f39074dc05fc6a1  qcom-angler-opm7.181205.001-d20950d9.tgz
             ---
             tar xfv huawei-angler-opm*.tgz
+            rm -v huawei-angler-opm*.tgz
             PATH0="$PATH"
             PATH="$PWD:$PATH"
             ln -sv /bin/cat more
@@ -145,9 +146,12 @@ jobs:
             type more
             file $(which more)
             echo -ne "\nI ACCEPT\n" | ./extract-huawei-angler.sh
+            rm -v extract-huawei-angler.sh
             rm -v more
             PATH="$PATH0"
             hash -r
+            tar xfv qcom-angler-opm*.tgz
+            rm -v qcom-angler-opm*.tgz
 
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
       # https://source.android.com/setup/develop/repo

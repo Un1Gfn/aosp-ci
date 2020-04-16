@@ -86,6 +86,22 @@ radio-angler-angler-03.88.img:      data
 bootloader-angler-angler-03.84.img: data
 ```
 
+huawei-angler-opm7.181205.001-52ed73ce.tgz
+extract-huawei-angler.sh
+```huawei
+vendor/
+vendor/huawei/
+vendor/huawei/angler/
+vendor/huawei/angler/BoardConfigPartial.mk
+vendor/huawei/angler/device-vendor.mk
+vendor/huawei/angler/device-partial.mk
+vendor/huawei/angler/proprietary/
+vendor/huawei/angler/proprietary/vendor.img
+vendor/huawei/angler/android-info.txt
+vendor/huawei/angler/BoardConfigVendor.mk
+```
+
+
 <details><summary> *h* </summary>
 
 LineageOS
