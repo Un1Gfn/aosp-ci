@@ -128,6 +128,19 @@ jobs:
           name: "AOSP dir"
           command: mkdir /home/circleci/aosp
 
+      - run:
+          name: "Wait for SSH"
+          when: always
+          command: |
+            echo
+            i=0
+            while true; do
+              sleep 60
+              i=$((i+1))
+              echo "$i min"
+            done
+            /usr/bin/false
+
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
       # https://source.android.com/setup/develop/repo
       # https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
@@ -143,7 +156,7 @@ jobs:
             git config --global user.email "darren19970810@gmail.com"
             git config --global user.name "Darren Ng"
             echo
-            yes | repo init -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52 -c --depth=1 --partial-clone
+            yes | repo init -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52 -c --depth=1
             echo
             free -h
             echo
@@ -175,19 +188,6 @@ jobs:
           key: v1-tree-{{ epoch }}
           paths:
             - /home/circleci/aosp/
-
-      # - run:
-      #     name: "Wait for SSH"
-      #     when: always
-      #     command: |
-      #       echo
-      #       i=0
-      #       while true; do
-      #         sleep 60
-      #         i=$((i+1))
-      #         echo "$i min"
-      #       done
-      #       /usr/bin/false
 
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
       # - store_artifacts:
