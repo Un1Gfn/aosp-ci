@@ -70,18 +70,22 @@ jobs:
 
       # https://unix.stackexchange.com/questions/410579/change-the-python3-default-version-in-ubuntu
       - run:
-          name: "Make sure there is only python 3 for repo and no python 2"
+          name: "Kill python"
           command: |
             rm -rf /opt/circleci/.pyenv
-            $apt purge python python2.7 python2.7-minimal
+            for py in \
+              python{,2{,.7},3{,.5}}{,-minimal} \
+              libpython{,2{,.7},3{,.5}}{-stdlib,-minimal}
+            do
+              $apt purge "$py" || true
+            done
             $apt autoremove --purge
-            $apt install python3
-            hash -r
-            sudo -i update-alternatives --install /usr/bin/python python /usr/bin/python3 1
-            sudo -i update-alternatives --set python /usr/bin/python3
-            hash -r
+            sh -c "python" && exit 1
+            sh -c "python2" && exit 1
+            sh -c "python3" && exit 1
+            [ -n "$(dpkg -l | grep python)" ] || exit 1
+            
             [ -n "$(python --version | grep -Fe 'Python 3.')" ] || exit 1
-            type python2 && exit 1
 
       - run:
           name: "Install repo"

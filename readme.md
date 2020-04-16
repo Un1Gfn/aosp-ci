@@ -28,6 +28,11 @@ Nexus 6P
 tmux
 * Detach: <kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>d</kbd>
 
+assert(P)
+```bash
+[ P ] || exit 1
+```
+
 curl
 ```bash
 # Progress meter
