@@ -187,16 +187,47 @@ jobs:
             done
             /usr/bin/false
 
+      # File "build/tools/merge-event-log-tags.py", line 51
+      #   except getopt.GetoptError, err:
+      # SyntaxError: invalid syntax
+      - run:
+          name: "Kill python* and bring back python 2"
+          command: |
+            for py in \
+              {lib,}python3.6{,-stdlib,-minimal}
+            do
+              $apt purge "$py" || true
+            done
+            $apt autoremove --purge
+            #
+            hash -r
+            ! sh -c "python  --version"
+            ! sh -c "python2 --version"
+            ! sh -c "python3 --version"
+            [ -z "$(dpkg -l | grep python)" ]
+            # 
+            $apt update
+            $apt install python
+            sudo -i update-alternatives --install /usr/bin/python2 python2 /usr/bin/python2.7 1
+            sudo -i update-alternatives --install /usr/bin/python  python  /usr/bin/python2.7 1
+            sudo -i update-alternatives --set python2 /usr/bin/python2.7
+            sudo -i update-alternatives --set python  /usr/bin/python2.7
+            hash -r
+            python2 --version |& grep -Fe 'Python 2.7'
+            python  --version |& grep -Fe 'Python 2.7'
+            ! sh -c "python3 --version"
+
       # https://source.android.com/setup/build/running#selecting-device-build
       - run:
           name: "Build"
           working_directory: /home/circleci/aosp/
           command: |
             source build/envsetup.sh
+            m help
+            m clean
             # lunch
             lunch aosp_angler-userdebug
             [ -z ${TOP+x} ] || exit 1
-            m help
             m droid
 
       - restore_cache:

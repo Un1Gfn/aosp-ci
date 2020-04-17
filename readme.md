@@ -44,6 +44,13 @@ assert(P)
 [ P ] || exit 1
 ```
 
+return code
+```bash
+PS0="$PS1"
+PS1="\$?|$PS1"
+PS1="$PS0"
+```
+
 curl
 ```bash
 # Progress meter
