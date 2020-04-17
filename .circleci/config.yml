@@ -173,7 +173,7 @@ jobs:
             unset -f x
             cat ~/.gitconfig
             echo
-            yes | repo init -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52 -c --depth=1 --partial-clone || true
+            yes | repo init -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52 -c --depth=1 --no-clone-bundle --partial-clone  || true
             echo
             free -h
             echo
