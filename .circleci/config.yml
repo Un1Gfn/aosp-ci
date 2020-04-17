@@ -1,9 +1,5 @@
 # https://github.com/Un1Gfn/avx/blob/master/.circleci/config.yml
 
-# /exp01/config.yml
-# /exp02/config.yml
-# /.circleci/config.yml
-
 version: 2
 
 jobs:
@@ -13,7 +9,8 @@ jobs:
     # https://circleci.com/docs/2.0/configuration-reference/#branches
     branches:
       only:
-        - xenial-aosp
+        - download
+        - build
         # - placeholder
 
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
@@ -25,12 +22,6 @@ jobs:
     resource_class: medium
 
     steps:
-
-      # - run:
-      #     name: Check if SSH is running
-      #     command: |
-      #       sudo -i pgrep -a sshd
-      #       [ -n "$(sudo -i pgrep -a sshd)" ] || exit 1
 
       - run:
           name: "Remove bloat"
@@ -53,8 +44,7 @@ jobs:
             export apt="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages --allow-unauthenticated"
             # export apt="sudo -i apt-get -q --allow-downgrades --allow-remove-essential --allow-change-held-packages"
             #
-            export PROJ_DIR="/root/project"
-            export _JAVA_OPTIONS="-Xmx$RAM"
+            # export _JAVA_OPTIONS="-Xmx$RAM"
             #
             EOF
             source "$BASH_ENV"
@@ -76,10 +66,6 @@ jobs:
             git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
             EOF
 
-      # - run:
-      #     name: "Verify J*8"
-      #     command: |
-      #       # ?
       - run:
           name: "Make sure there is no J*"
           command: |
@@ -146,59 +132,21 @@ jobs:
             echo
             echo
 
-      - run:
-          name: "AOSP dir"
-          command: mkdir /home/circleci/aosp
+      - restore_cache:
+          key: v1-.repo-
 
       - run:
-          name: "Wait for SSH"
-          when: always
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
-
-      # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
-      # https://source.android.com/setup/develop/repo
-      # https://source.android.com/setup/start/build-numbers#source-code-tags-and-builds
-      # https://stackoverflow.com/a/19636869
-      # fetch - ?m?s
-      # update working tree - ?m?s
-      - run:
-          name: "Download AOSP"
+          name: "Extract .repo/"
           working_directory: /home/circleci/aosp/
           command: |
-            git config --global user.email "darren19970810@gmail.com"
-            git config --global user.name "Darren Ng"
-            echo
-            yes | repo init -u https://android.googlesource.com/platform/manifest -b android-8.1.0_r52 -c --depth=1 --partial-clone
-            echo
-            free -h
-            echo
-            sudo -i sync
-            echo 3 | sudo tee /proc/sys/vm/drop_caches
-            free -h
-            echo
-            [ "$(nproc --all)" -eq 2 ] || exit
-            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -n -c -q -j2
-            echo
-            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -l
-            echo
-            du -hd 0 .repo
-            echo
-            echo
-            EOF
+            [ -d .repo ] || exit 1
+            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -l -c -q -j2
 
       # https://source.android.com/setup/build/requirements#binaries
       # https://source.android.com/setup/build/downloading#obtaining-proprietary-binaries
       # https://developers.google.com/android/drivers#angleropm7.181205.001
       - run:
-          name: "Download device binaries"
+          name: "proprietary binaries"
           working_directory: /home/circleci/aosp/
           command: |
             curl -sS -LOJR https://dl.google.com/dl/android/aosp/huawei-angler-opm7.181205.001-52ed73ce.tgz
@@ -223,7 +171,37 @@ jobs:
             rm -v extract-qcom-angler.sh
             rm -v more
             PATH="$PATH0"
+            unset -v "$PATH0"
             hash -r
+
+      - run:
+          name: "Wait for SSH"
+          when: always
+          command: |
+            echo
+            i=0
+            while true; do
+              sleep 60
+              i=$((i+1))
+              echo "$i min"
+            done
+            /usr/bin/false
+
+      # https://source.android.com/setup/build/running#selecting-device-build
+      - run:
+          name: "Build"
+          working_directory: /home/circleci/aosp/
+          command: |
+            source build/envsetup.sh
+            lunch
+            lunch aosp_angler-userdebug
+            [ -z ${TOP+x} ] || exit 1
+            m
+
+      - restore_cache:
+          key: v1-build-incomplete- {{ epoch }}
+          paths:
+            - /home/circleci/aosp/
 
       - run:
           name: "[B] Disk space"
@@ -242,14 +220,6 @@ jobs:
       #       $pkg purge
       #       rm -rf .repo
       #       rm -rf /usr/local
-
-      - run:
-          name: "Build"
-          working_directory: /home/circleci/aosp/
-          command: |
-            source build/envsetup.sh
-            lunch angler
-            m
 
       # - run:
       #     name: "[M] Stop"

@@ -7,15 +7,18 @@ CircleCI
 dpkg
 * `-S FILE` which package provide file
 
-* [Repo](https://gerrit.googlesource.com/git-repo/)
-  * [Repo Command Reference](https://source.android.com/setup/develop/repo)
+[Repo](https://gerrit.googlesource.com/git-repo/)
+* [Repo Command Reference](https://source.android.com/setup/develop/repo)
 
-* [Zstandard](https://facebook.github.io/zstd/)
-  * [comparison](https://engineering.fb.com/core-data/smaller-and-faster-data-compression-with-zstandard/)
-  * [benchmark](https://quixdb.github.io/squash-benchmark/)
+[Soong](https://android.googlesource.com/platform/build/soong)
+* [modules](https://ci.android.com/builds/submitted/6402685/linux/latest/view/soong_build.html)
 
+[zstd](https://facebook.github.io/zstd/)
+* [comparison](https://engineering.fb.com/core-data/smaller-and-faster-data-compression-with-zstandard/)
+* [benchmark](https://quixdb.github.io/squash-benchmark/)
 
 [AOSP](https://source.android.com/)
+* [Mailing list](https://groups.google.com/forum/#!forum/android-building)
 * [Android Community and contacts](https://source.android.com/setup/community.html)
 * [Google Git](https://android.googlesource.com/)
 * [Android Code Search](https://cs.android.com/)
@@ -50,44 +53,11 @@ curl -# -LOJR 'https://...'
 curl -sS -LOJR 'https://...'
 ```
 
-Locale
-```
-perl: warning: Setting locale failed.
-perl: warning: Please check that your locale settings:
-  LANGUAGE = (unset),
-  LC_ALL = (unset),
-  LANG = "en_US.UTF-8"
-    are supported and installed on your system.
-perl: warning: Falling back to the standard locale ("C").
-```
-
 Save disk space
 * [duc](https://duc.zevv.nl/)
   * [usage](https://github.com/zevv/duc/blob/master/doc/duc.md)
   * [AUR](https://aur.archlinux.org/packages/duc/)
   * [xenial](https://packages.ubuntu.com/xenial/duc)
-```bash
-rm -rfv /var/cache/pacman/*
-rm -rfv /var/lib/pacman/sync/*
-rm -rfv /var/cache/pkgfile/*"
-```
-
-Steal blobs from [factory image](https://developers.google.com/android/images#bullhead)
-```bash
-sum0="b75ce068f23a0e793805f80fccbc081eca52861ef5eb080c47f502de4c3f9713"
-sum1="$(sha256sum angler-opm7.181205.001-factory-b75ce068.zip | cut -d' ' -f1)"
-if [ "$sum0" = "$sum1" ]; then
-  echo checksum match
-else
-  echo checksum mismatch
-  /usr/bin/false
-fi
-unset -v sum0
-unset -v sum1
-
-cd angler-opm7.181205.001/
-unzip image-angler-opm7.181205.001.zip
-```
 
 ```bash
 # file *img
@@ -113,6 +83,7 @@ vendor/huawei/angler/proprietary/vendor.img
 vendor/huawei/angler/android-info.txt
 vendor/huawei/angler/BoardConfigVendor.mk
 ```
+
 
 
 <details><summary> *h* </summary>
