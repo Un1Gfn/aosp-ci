@@ -10,6 +10,11 @@ dpkg
 * [Repo](https://gerrit.googlesource.com/git-repo/)
   * [Repo Command Reference](https://source.android.com/setup/develop/repo)
 
+* [Zstandard](https://facebook.github.io/zstd/)
+  * [comparison](https://engineering.fb.com/core-data/smaller-and-faster-data-compression-with-zstandard/)
+  * [benchmark](https://quixdb.github.io/squash-benchmark/)
+
+
 [AOSP](https://source.android.com/)
 * [Android Community and contacts](https://source.android.com/setup/community.html)
 * [Google Git](https://android.googlesource.com/)
