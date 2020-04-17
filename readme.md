@@ -1,21 +1,23 @@
+[Link to this page](https://github.com/Un1Gfn/lineage)
+[Link to CircleCI pipelines](https://app.circleci.com/pipelines/github/Un1Gfn/lineage)
 
 CircleCI
 * [Pipelines](https://app.circleci.com/pipelines/github/Un1Gfn/lineage)
-* [Caching](https://circleci.com/docs/2.0/caching/)
-* [step - run - WD/shell](https://circleci.com/docs/2.0/configuration-reference/#run)
+* [Caching Dependencies](https://circleci.com/docs/2.0/caching/)
+* [Configuring CircleCI](https://circleci.com/docs/2.0/configuration-reference/#run)
 
-dpkg
-* `-S FILE` which package provide file
+Debian/Ubuntu
+* [J\*](https://askubuntu.com/questions/150057/how-can-i-tell-what-version-of-java-i-have-installed)
+* [alternatives system](https://wiki.debian.org/DebianAlternatives)
+* tell which package provide FILE `dpkg -S FILE`
 
 [Repo](https://gerrit.googlesource.com/git-repo/)
 * [Repo Command Reference](https://source.android.com/setup/develop/repo)
 
 [Soong](https://android.googlesource.com/platform/build/soong)
 * [modules](https://ci.android.com/builds/submitted/6402685/linux/latest/view/soong_build.html)
-
-[zstd](https://facebook.github.io/zstd/)
-* [comparison](https://engineering.fb.com/core-data/smaller-and-faster-data-compression-with-zstandard/)
-* [benchmark](https://quixdb.github.io/squash-benchmark/)
+* [envsetup.sh](https://android.googlesource.com/platform/build/+/refs/heads/master/envsetup.sh)
+* [m](https://source.android.com/setup/build/building#build-the-code)
 
 [AOSP](https://source.android.com/)
 * [Mailing list](https://groups.google.com/forum/#!forum/android-building)
@@ -47,7 +49,7 @@ assert(P)
 return code
 ```bash
 PS0="$PS1"
-PS1="\$?|$PS1"
+PS1="\$?|$PS0"
 PS1="$PS0"
 ```
 
@@ -67,8 +69,8 @@ Save disk space
   * [AUR](https://aur.archlinux.org/packages/duc/)
   * [xenial](https://packages.ubuntu.com/xenial/duc)
 
+file *img
 ```bash
-# file *img
 boot.img:                           Android bootimg, kernel (0x8000), ramdisk (0x2000000), page size: 4096, cmdline (androidboot.hardware=angler androidboot.console=ttyHSL0 msm_rtb.filter=0x37 ehci-hcd.park=3 lpm)
 recovery.img:                       Android bootimg, kernel (0x8000), ramdisk (0x2000000), page size: 4096, cmdline (androidboot.hardware=angler androidboot.console=ttyHSL0 msm_rtb.filter=0x37 ehci-hcd.park=3 lpm)
 system.img:                         Android sparse image, version: 1.0, Total of 786432 4096-byte output blocks in 3898 input chunks.
@@ -135,6 +137,7 @@ services                The system server (Java) and friends
 help                    You're reading it right now
 ```
 
+m droid
 ```
 [44/44] bootstrap out/soong/.minibootstrap/build.ninja.in
 [4/4] out/soong/.bootstrap/bin/minibp out/soong/.bootstrap/build.ninja
@@ -151,8 +154,11 @@ help                    You're reading it right now
 12:19:53 stop
 ```
 
-
 <details><summary> *h* </summary>
+
+[zstd](https://facebook.github.io/zstd/)
+* [comparison](https://engineering.fb.com/core-data/smaller-and-faster-data-compression-with-zstandard/)
+* [benchmark](https://quixdb.github.io/squash-benchmark/)
 
 LineageOS
 * [the updater app stores zips in /data/lineageos_updates/](https://wiki.lineageos.org/faq.html#where-does-the-updater-app-store-the-downloaded-zip)

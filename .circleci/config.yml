@@ -67,7 +67,7 @@ jobs:
             EOF
 
       - run:
-          name: "Make sure J*8 is working"
+          name: "Verify J*8"
           command: |
             dpkg -l | grep openjdk-8-jdk
             javac -version |& grep -F '1.8.'
@@ -142,6 +142,19 @@ jobs:
             [ -d .repo ] || exit 1
             /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -l -c -q -j2
 
+      - run:
+          name: "Remove .repo/"
+          working_directory: /home/circleci/aosp/
+          command: rm -rf .repo/
+
+      - run:
+          name: "[B] Disk space"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            echo
+
       # https://source.android.com/setup/build/requirements#binaries
       # https://source.android.com/setup/build/downloading#obtaining-proprietary-binaries
       # https://developers.google.com/android/drivers#angleropm7.181205.001
@@ -173,19 +186,6 @@ jobs:
             PATH="$PATH0"
             unset -v PATH0
             hash -r
-
-      - run:
-          name: "Wait for SSH"
-          when: always
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
 
       # File "build/tools/merge-event-log-tags.py", line 51
       #   except getopt.GetoptError, err:
@@ -230,18 +230,39 @@ jobs:
             [ -z ${TOP+x} ] || exit 1
             m droid
 
-      - restore_cache:
-          key: v1-build-incomplete- {{ epoch }}
-          paths:
-            - /home/circleci/aosp/
-
       - run:
-          name: "[B] Disk space"
+          name: "[C] Disk space"
           command: |
             echo
             sudo -i df -h
             echo
             echo
+
+      - run:
+          name: "Wait for SSH"
+          when: always
+          command: |
+            echo
+            i=0
+            while true; do
+              sleep 60
+              i=$((i+1))
+              echo "$i min"
+            done
+            /usr/bin/false
+
+      # - run:
+      #     name: "[C] Disk space"
+      #     command: |
+      #       echo
+      #       sudo -i df -h
+      #       echo
+      #       echo
+
+      # - save_cache:
+      #     key: v1-build-incomplete- {{ epoch }}
+      #     paths:
+      #       - /home/circleci/aosp/
 
       # - run:
       #     name: "Free up space"
