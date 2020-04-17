@@ -67,11 +67,11 @@ jobs:
             EOF
 
       - run:
-          name: "Make sure there is no J*"
+          name: "Make sure J*8 is working"
           command: |
-            $apt purge ant openjdk-8-jdk openjdk-8-jre openjdk-8-jre-headless
-            $apt autoremove --purge
-            [ -z "$(dpkg -l|grep -e jdk -e jre -e headless -e java[^s])" ] || echo "err"
+            dpkg -l | grep openjdk-8-jdk
+            javac -version |& grep -F '1.8.'
+            [ "$(java -version |& grep -F '1.8.' | wc -l)" -eq 2 ]
 
       # https://unix.stackexchange.com/questions/410579/change-the-python3-default-version-in-ubuntu
       # https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa
@@ -90,10 +90,10 @@ jobs:
             done
             $apt autoremove --purge
             # 
-            sh -c "python  --version" && exit 1
-            sh -c "python2 --version" && exit 1
-            sh -c "python3 --version" && exit 1
-            [ -z "$(dpkg -l | grep python)" ] || exit 1
+            ! sh -c "python  --version"
+            ! sh -c "python2 --version"
+            ! sh -c "python3 --version"
+            [ -z "$(dpkg -l | grep python)" ]
             # 
             $apt update
             $apt install python3.6
@@ -103,8 +103,8 @@ jobs:
             sudo -i update-alternatives --set python3 /usr/bin/python3.6
             sudo -i update-alternatives --set python  /usr/bin/python3.6
             hash -r
-            python  --version | grep -Fe 'Python 3.6' || exit 1
-            python3 --version | grep -Fe 'Python 3.6' || exit 1
+            python  --version | grep -Fe 'Python 3.6'
+            python3 --version | grep -Fe 'Python 3.6'
 
       - run:
           name: "Install repo"
@@ -196,6 +196,7 @@ jobs:
             # lunch
             lunch aosp_angler-userdebug
             [ -z ${TOP+x} ] || exit 1
+            m help
             m droid
 
       - restore_cache:
