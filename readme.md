@@ -154,7 +154,7 @@ m droid
 12:19:53 stop
 ```
 
-<details><summary> *h* </summary>
+<details><summary> h </summary>
 
 [zstd](https://facebook.github.io/zstd/)
 * [comparison](https://engineering.fb.com/core-data/smaller-and-faster-data-compression-with-zstandard/)

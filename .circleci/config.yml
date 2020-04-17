@@ -10,7 +10,8 @@ jobs:
     branches:
       only:
         - download
-        - build
+        - build-A
+        - build-B
         # - placeholder
 
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
@@ -125,7 +126,7 @@ jobs:
             hash -r
 
       - run:
-          name: "[A] Disk space"
+          name: "[A] Disk usage (approx 5G)"
           command: |
             echo
             sudo -i df -h
@@ -148,7 +149,7 @@ jobs:
           command: rm -rf .repo/
 
       - run:
-          name: "[B] Disk space"
+          name: "[B] Disk usage (approx 5+30=35G)"
           command: |
             echo
             sudo -i df -h
