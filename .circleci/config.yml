@@ -171,7 +171,7 @@ jobs:
             rm -v extract-qcom-angler.sh
             rm -v more
             PATH="$PATH0"
-            unset -v "$PATH0"
+            unset -v PATH0
             hash -r
 
       - run:
@@ -193,10 +193,10 @@ jobs:
           working_directory: /home/circleci/aosp/
           command: |
             source build/envsetup.sh
-            lunch
+            # lunch
             lunch aosp_angler-userdebug
             [ -z ${TOP+x} ] || exit 1
-            m
+            m droid
 
       - restore_cache:
           key: v1-build-incomplete- {{ epoch }}

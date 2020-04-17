@@ -37,6 +37,7 @@ Nexus 6P
 
 tmux
 * Detach: <kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>d</kbd>
+* Scroll: <kbd>Ctrl</kbd>+<kbd>b</kbd> <kbd>[</kbd>
 
 assert(P)
 ```bash
@@ -84,6 +85,64 @@ vendor/huawei/angler/android-info.txt
 vendor/huawei/angler/BoardConfigVendor.mk
 ```
 
+lunch aosp_angler-userdebug
+```
+============================================
+PLATFORM_VERSION_CODENAME=REL
+PLATFORM_VERSION=8.1.0
+TARGET_PRODUCT=aosp_angler
+TARGET_BUILD_VARIANT=userdebug
+TARGET_BUILD_TYPE=release
+TARGET_ARCH=arm64
+TARGET_ARCH_VARIANT=armv8-a
+TARGET_CPU_VARIANT=cortex-a53
+TARGET_2ND_ARCH=arm
+TARGET_2ND_ARCH_VARIANT=armv7-a-neon
+TARGET_2ND_CPU_VARIANT=cortex-a53.a57
+HOST_ARCH=x86_64
+HOST_2ND_ARCH=x86
+HOST_OS=linux
+HOST_OS_EXTRA=Linux-4.15.0-1027-gcp-x86_64-with-Ubuntu-16.04-xenial
+HOST_CROSS_OS=windows
+HOST_CROSS_ARCH=x86
+HOST_CROSS_2ND_ARCH=x86_64
+HOST_BUILD_TYPE=release
+BUILD_ID=OPM7.181205.001
+OUT_DIR=out
+============================================
+```
+
+m help
+```
+Common make targets:
+----------------------------------------------------------------------------------
+droid                   Default target
+clean                   (aka clobber) equivalent to rm -rf out/
+snod                    Quickly rebuild the system image from built packages
+vnod                    Quickly rebuild the vendor image from built packages
+offline-sdk-docs        Generate the HTML for the developer SDK docs
+doc-comment-check-docs  Check HTML doc links & validity, without generating HTML
+libandroid_runtime      All the JNI framework stuff
+framework               All the java framework stuff
+services                The system server (Java) and friends
+help                    You're reading it right now
+```
+
+```
+[44/44] bootstrap out/soong/.minibootstrap/build.ninja.in
+[4/4] out/soong/.bootstrap/bin/minibp out/soong/.bootstrap/build.ninja
+[860/861] glob vendor/*/*/Android.bp
+[54/54] out/soong/.bootstrap/bin/soong_build out/soong/build.ninja
+12:19:53 *******************************************************
+12:19:53 You are attempting to build with an unsupported JDK.
+12:19:53 
+12:19:53 Only an OpenJDK based JDK is supported.
+12:19:53 
+12:19:53 Please follow the machine setup instructions at:
+12:19:53     https://source.android.com/source/initializing.html
+12:19:53 *******************************************************
+12:19:53 stop
+```
 
 
 <details><summary> *h* </summary>
