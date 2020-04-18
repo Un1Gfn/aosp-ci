@@ -74,56 +74,36 @@ jobs:
             javac -version |& grep -F '1.8.'
             [ "$(java -version |& grep -F '1.8.' | wc -l)" -eq 2 ]
 
-      # https://unix.stackexchange.com/questions/410579/change-the-python3-default-version-in-ubuntu
-      # https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa
       - run:
-          name: "Kill python* and get deadsnakes/python3.6"
+          name: "Wait for SSH (foreground)"
+          when: always
+          background: false
           command: |
-            # 
-            sudo -i add-apt-repository -y ppa:deadsnakes/ppa # Depends on python(3?)
-            # 
-            rm -rf /opt/circleci/.pyenv || true
+            echo
+            i=0
+            while true; do
+              sleep 60
+              i=$((i+1))
+              echo "$i min"
+            done
+            /usr/bin/false
+
+      # File "build/tools/merge-event-log-tags.py", line 51
+      #   except getopt.GetoptError, err:
+      # SyntaxError: invalid syntax
+      - run:
+          name: "Kill python3 and keep python 2"
+          command: |
             for py in \
-              python{,2{,.7},3{,.5}}{,-minimal} \
-              libpython{,2{,.7},3{,.5}}{-stdlib,-minimal}
+              {lib,}python3{,.5}{,-stdlib,-minimal}
             do
               $apt purge "$py" || true
             done
             $apt autoremove --purge
-            # 
-            ! sh -c "python  --version"
-            ! sh -c "python2 --version"
+            python2 --version |& grep -Fe 'Python 2.7'
+            python  --version |& grep -Fe 'Python 2.7'
             ! sh -c "python3 --version"
-            [ -z "$(dpkg -l | grep python)" ]
-            # 
-            $apt update
-            $apt install python3.6
-            hash -r
-            sudo -i update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
-            sudo -i update-alternatives --install /usr/bin/python  python  /usr/bin/python3.6 1
-            sudo -i update-alternatives --set python3 /usr/bin/python3.6
-            sudo -i update-alternatives --set python  /usr/bin/python3.6
-            hash -r
-            python  --version | grep -Fe 'Python 3.6'
-            python3 --version | grep -Fe 'Python 3.6'
-
-      - run:
-          name: "Install repo"
-          command: |
-            install -m755 /dev/null ~/bin/test2
-            cat <<"---" >~/bin/test2
-              #!/bin/bash
-              echo $((740+37))
-            ---
-            test2
-            rm -v ~/bin/test2
-            curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-            chmod a+x ~/bin/repo
-            file ~/bin/repo
-            ls -l ~/bin/repo
-            gpg --recv-key 8BB9AD793E8E6153AF0F9A4416530D5E920F5C65
-            curl https://storage.googleapis.com/git-repo-downloads/repo.asc | gpg --verify - ~/bin/repo
-            hash -r
+            [ -z "$(dpkg -l | grep python3)" ]
 
       - run:
           name: "[A] Disk usage (approx 5G)"
@@ -134,102 +114,29 @@ jobs:
             echo
 
       - restore_cache:
-          key: v1-.repo-
+          key: v1-incomplete-
 
       - run:
-          name: "Extract .repo/"
-          working_directory: /home/circleci/aosp/
-          command: |
-            [ -d .repo ] || exit 1
-            /usr/bin/time --format="\n  wall clock time - %E\n" repo sync -l -c -q -j2
-
-      - run:
-          name: "Remove .repo/"
-          working_directory: /home/circleci/aosp/
-          command: rm -rf .repo/
-
-      - run:
-          name: "[B] Disk usage (approx 5+30=35G)"
+          name: "[B] Disk usage"
           command: |
             echo
             sudo -i df -h
             echo
             echo
 
-      # https://source.android.com/setup/build/requirements#binaries
-      # https://source.android.com/setup/build/downloading#obtaining-proprietary-binaries
-      # https://developers.google.com/android/drivers#angleropm7.181205.001
-      - run:
-          name: "proprietary binaries"
-          working_directory: /home/circleci/aosp/
-          command: |
-            curl -sS -LOJR https://dl.google.com/dl/android/aosp/huawei-angler-opm7.181205.001-52ed73ce.tgz
-            curl -sS -LOJR https://dl.google.com/dl/android/aosp/qcom-angler-opm7.181205.001-d20950d9.tgz
-            cat <<"---" | sha256sum --strict -c -
-              2eb9a77de059739d33c7fad07e34034f03a93d70eea39460bb0d9278e5763053  huawei-angler-opm7.181205.001-52ed73ce.tgz
-              78222d6c627020d8312477f647253b37569882ebdfe527207f39074dc05fc6a1  qcom-angler-opm7.181205.001-d20950d9.tgz
-            ---
-            tar xfv huawei-angler-opm*.tgz
-            tar xfv qcom-angler-opm*.tgz
-            rm -v huawei-angler-opm*.tgz
-            rm -v qcom-angler-opm*.tgz
-            PATH0="$PATH"
-            PATH="$PWD:$PATH"
-            ln -sv /bin/cat more
-            hash -r
-            type more
-            file $(which more)
-            echo -ne "\nI ACCEPT\n" | ./extract-huawei-angler.sh
-            echo -ne "\nI ACCEPT\n" | ./extract-qcom-angler.sh
-            rm -v extract-huawei-angler.sh
-            rm -v extract-qcom-angler.sh
-            rm -v more
-            PATH="$PATH0"
-            unset -v PATH0
-            hash -r
-
-      # File "build/tools/merge-event-log-tags.py", line 51
-      #   except getopt.GetoptError, err:
-      # SyntaxError: invalid syntax
-      - run:
-          name: "Kill python* and bring back python 2"
-          command: |
-            for py in \
-              {lib,}python3.6{,-stdlib,-minimal}
-            do
-              $apt purge "$py" || true
-            done
-            $apt autoremove --purge
-            #
-            hash -r
-            ! sh -c "python  --version"
-            ! sh -c "python2 --version"
-            ! sh -c "python3 --version"
-            [ -z "$(dpkg -l | grep python)" ]
-            # 
-            $apt update
-            $apt install python
-            sudo -i update-alternatives --install /usr/bin/python2 python2 /usr/bin/python2.7 1
-            sudo -i update-alternatives --install /usr/bin/python  python  /usr/bin/python2.7 1
-            sudo -i update-alternatives --set python2 /usr/bin/python2.7
-            sudo -i update-alternatives --set python  /usr/bin/python2.7
-            hash -r
-            python2 --version |& grep -Fe 'Python 2.7'
-            python  --version |& grep -Fe 'Python 2.7'
-            ! sh -c "python3 --version"
-
       # https://source.android.com/setup/build/running#selecting-device-build
       - run:
-          name: "Build"
+          name: "Proceed w/ build"
           working_directory: /home/circleci/aosp/
           command: |
+            cat <<"---" >./m.sh
+            #!/bin/bash
             source build/envsetup.sh
-            m help
-            m clean
-            # lunch
-            lunch aosp_angler-userdebug
             [ -z ${TOP+x} ] || exit 1
             m droid
+            ---
+            chmod +x m.sh
+            ./m.sh
 
       - run:
           name: "[C] Disk space"
@@ -240,7 +147,8 @@ jobs:
             echo
 
       - run:
-          name: "Wait for SSH"
+          name: "Wait for SSH (background)"
+          background: true
           when: always
           command: |
             echo
@@ -252,38 +160,8 @@ jobs:
             done
             /usr/bin/false
 
-      # - run:
-      #     name: "[C] Disk space"
-      #     command: |
-      #       echo
-      #       sudo -i df -h
-      #       echo
-      #       echo
-
-      # - save_cache:
-      #     key: v1-build-incomplete- {{ epoch }}
-      #     paths:
-      #       - /home/circleci/aosp/
-
-      # - run:
-      #     name: "Free up space"
-      #     command: |
-      #       df
-      #       du
-      #       https://www.google.com/search?q=apt+clean+cache&oq=apt+clean+cache
-      #       $pkg purge
-      #       rm -rf .repo
-      #       rm -rf /usr/local
-
-      # - run:
-      #     name: "[M] Stop"
-      #     command: |
-      #       /usr/bin/false
-
-      # - checkout # github -> /root/project
-
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
-      # - store_artifacts:
-      #     path: /nproc
-      # - store_artifacts:
-      #     path: /lscpu
+      - store_artifacts:
+          path: /nproc
+      - store_artifacts:
+          path: /lscpu
