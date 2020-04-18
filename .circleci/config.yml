@@ -146,8 +146,19 @@ jobs:
             done
             /usr/bin/false
 
-      # - run:
-      #     name: "Generate images"
+      # https://stackoverflow.com/questions/36949605/creating-flashable-zip-from-android-source-code
+      - run:
+          name: "Generate images"
+          working_directory: /home/circleci/aosp/
+          command: |
+            echo
+            ls -lh dist_output/
+            echo
+            ls -lh dist_output/*target_files*
+            echo
+            ./build/tools/releasetools/ota_from_target_files
+            echo
+            echo
 
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
       - store_artifacts:
