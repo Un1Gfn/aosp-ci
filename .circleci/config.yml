@@ -227,14 +227,19 @@ jobs:
           name: "Build-A"
           working_directory: /home/circleci/aosp/
           command: |
+            cat <<"---" >./m.sh
+            #!/bin/bash
             source build/envsetup.sh
             m help
             m clean
             # lunch
             lunch aosp_angler-userdebug
             [ -z ${TOP+x} ] || exit 1
-            # /usr/bin/timeout "$((4*60+0))m" m droid || true
-            /usr/bin/timeout "$((4*1))m" m droid || true
+            m droid
+            ---
+            chmod +x m.sh
+            # /usr/bin/timeout "$((4*60+0))m" ./m.sh || true
+            /usr/bin/timeout "$((4*1))m" ./m.sh || true
 
       - run:
           name: "[C] Disk space"
