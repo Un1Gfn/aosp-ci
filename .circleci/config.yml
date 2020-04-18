@@ -74,20 +74,6 @@ jobs:
             javac -version |& grep -F '1.8.'
             [ "$(java -version |& grep -F '1.8.' | wc -l)" -eq 2 ]
 
-      - run:
-          name: "Wait for SSH (foreground)"
-          when: always
-          background: false
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
-
       # File "build/tools/merge-event-log-tags.py", line 51
       #   except getopt.GetoptError, err:
       # SyntaxError: invalid syntax
@@ -132,6 +118,7 @@ jobs:
             cat <<"---" >./m.sh
             #!/bin/bash
             source build/envsetup.sh
+            lunch aosp_angler-userdebug
             [ -z ${TOP+x} ] || exit 1
             m droid
             ---
@@ -147,8 +134,7 @@ jobs:
             echo
 
       - run:
-          name: "Wait for SSH (background)"
-          background: true
+          name: "Wait for SSH"
           when: always
           command: |
             echo
@@ -159,6 +145,9 @@ jobs:
               echo "$i min"
             done
             /usr/bin/false
+
+      # - run:
+      #     name: "Generate images"
 
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
       - store_artifacts:

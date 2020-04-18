@@ -20,6 +20,7 @@ Debian/Ubuntu
 * [m](https://source.android.com/setup/build/building#build-the-code)
 
 [AOSP](https://source.android.com/)
+* [Android CI](https://ci.android.com/)
 * [Mailing list](https://groups.google.com/forum/#!forum/android-building)
 * [Android Community and contacts](https://source.android.com/setup/community.html)
 * [Google Git](https://android.googlesource.com/)
