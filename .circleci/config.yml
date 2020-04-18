@@ -81,8 +81,10 @@ jobs:
           command: |
             # 
             sudo -i add-apt-repository -y ppa:deadsnakes/ppa # Depends on python(3?)
+            echo
             # 
-            rm -rf /opt/circleci/.pyenv || true
+            echo
+            sudo -i rm -rf /opt/circleci/.pyenv || true
             for py in \
               python{,2{,.7},3{,.5}}{,-minimal} \
               libpython{,2{,.7},3{,.5}}{-stdlib,-minimal}
@@ -219,8 +221,10 @@ jobs:
             ! sh -c "python3 --version"
 
       # https://source.android.com/setup/build/running#selecting-device-build
+      # 4 hour time limit
+      # make sure there is enough time for save_cache
       - run:
-          name: "Build"
+          name: "Build-A"
           working_directory: /home/circleci/aosp/
           command: |
             source build/envsetup.sh
@@ -229,7 +233,8 @@ jobs:
             # lunch
             lunch aosp_angler-userdebug
             [ -z ${TOP+x} ] || exit 1
-            m droid
+            # /usr/bin/timeout "$((4*60+0))m" m droid || /usr/bin/true
+            /usr/bin/timeout "$((4*1))m" m droid || /usr/bin/true
 
       - run:
           name: "[C] Disk space"
@@ -238,6 +243,12 @@ jobs:
             sudo -i df -h
             echo
             echo
+
+      - save_cache:
+          # key: v1-incomplete-{{ epoch }}
+          key: v1-garbage-{{ epoch }}
+          paths:
+            - /home/circleci/aosp/
 
       - run:
           name: "Wait for SSH"
@@ -251,19 +262,6 @@ jobs:
               echo "$i min"
             done
             /usr/bin/false
-
-      # - run:
-      #     name: "[C] Disk space"
-      #     command: |
-      #       echo
-      #       sudo -i df -h
-      #       echo
-      #       echo
-
-      # - save_cache:
-      #     key: v1-build-incomplete- {{ epoch }}
-      #     paths:
-      #       - /home/circleci/aosp/
 
       # - run:
       #     name: "Free up space"
