@@ -233,8 +233,8 @@ jobs:
             # lunch
             lunch aosp_angler-userdebug
             [ -z ${TOP+x} ] || exit 1
-            # /usr/bin/timeout "$((4*60+0))m" m droid || /usr/bin/true
-            /usr/bin/timeout "$((4*1))m" m droid || /usr/bin/true
+            # /usr/bin/timeout "$((4*60+0))m" m droid || true
+            /usr/bin/timeout "$((4*1))m" m droid || true
 
       - run:
           name: "[C] Disk space"
@@ -250,18 +250,18 @@ jobs:
           paths:
             - /home/circleci/aosp/
 
-      - run:
-          name: "Wait for SSH"
-          when: always
-          command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
+      # - run:
+      #     name: "Wait for SSH"
+      #     when: always
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
 
       # - run:
       #     name: "Free up space"
