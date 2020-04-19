@@ -25,6 +25,11 @@ jobs:
     steps:
 
       - run:
+          name: "Please build w/ SSH"
+          command: |
+            echo "Please build w/ SSH"
+
+      - run:
           name: "Remove bloat"
           working_directory: /opt/
           command: |
@@ -63,6 +68,7 @@ jobs:
             $apt update
             $apt autoremove --purge
             cat <<"EOF" | xargs $apt install
+            zstd
             tree duc vim
             git-core gnupg flex bison gperf build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 lib32ncurses5-dev x11proto-core-dev libx11-dev lib32z-dev libgl1-mesa-dev libxml2-utils xsltproc unzip
             EOF
@@ -74,9 +80,6 @@ jobs:
             javac -version |& grep -F '1.8.'
             [ "$(java -version |& grep -F '1.8.' | wc -l)" -eq 2 ]
 
-      # File "build/tools/merge-event-log-tags.py", line 51
-      #   except getopt.GetoptError, err:
-      # SyntaxError: invalid syntax
       - run:
           name: "Kill python3 and keep python 2"
           command: |
@@ -103,7 +106,24 @@ jobs:
           key: v1-incomplete-
 
       - run:
-          name: "[B] Disk usage"
+          name: "[B] Disk usage (approx 5G+xG)"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            echo
+
+      - run:
+          name: "Extract and drop zstd"
+          working_directory: /home/circleci/
+          no_output_timeout: 1h
+          command: |
+            ls -lh aosp.tar.zst
+            zstdcat aosp.tar.zst | tar xf -
+            rm -v aosp.tar.zst
+
+      - run:
+          name: "[C] Disk usage (approx 5G+yG)"
           command: |
             echo
             sudo -i df -h
@@ -115,14 +135,6 @@ jobs:
           name: "Proceed w/ build"
           working_directory: /home/circleci/aosp/
           command: |
-            cat <<"---" >./m.sh
-            #!/bin/bash
-            source build/envsetup.sh
-            lunch aosp_angler-userdebug
-            [ -z ${TOP+x} ] || exit 1
-            m droid
-            ---
-            chmod +x m.sh
             ./m.sh
 
       - run:
@@ -147,21 +159,21 @@ jobs:
             /usr/bin/false
 
       # https://stackoverflow.com/questions/36949605/creating-flashable-zip-from-android-source-code
-      - run:
-          name: "Generate images"
-          working_directory: /home/circleci/aosp/
-          command: |
-            echo
-            ls -lh dist_output/
-            echo
-            ls -lh dist_output/*target_files*
-            echo
-            ./build/tools/releasetools/ota_from_target_files
-            echo
-            echo
+      # - run:
+      #     name: "Generate images"
+      #     working_directory: /home/circleci/aosp/
+      #     command: |
+      #       echo
+      #       ls -lh dist_output/
+      #       echo
+      #       ls -lh dist_output/*target_files*
+      #       echo
+      #       ./build/tools/releasetools/ota_from_target_files
+      #       echo
+      #       echo
 
       # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
-      - store_artifacts:
-          path: /nproc
-      - store_artifacts:
-          path: /lscpu
+      # - store_artifacts:
+      #     path: /nproc
+      # - store_artifacts:
+      #     path: /lscpu
