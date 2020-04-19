@@ -127,7 +127,7 @@ jobs:
 
       - run:
           name: "AOSP dir"
-          command: mkdir /home/circleci/aosp
+          command: mkdir -v /home/circleci/aosp
 
       - run:
           name: "[A] Disk usage (approx 5G)"
@@ -207,8 +207,7 @@ jobs:
       - run:
           name: "Zstd"
           no_output_timeout: 1h
-          command: |
-            tar -c --zstd -f aosp.tar.zst aosp/
+          command: tar -c --zstd -f aosp.tar.zst aosp/
 
       - run:
           name: "[D] Disk usage (approx 5G+30G+?G)"
