@@ -13,8 +13,9 @@ jobs:
     # https://circleci.com/docs/2.0/configuration-reference/#branches
     branches:
       only:
-        - build
         - download
+        - build-A
+        - build-B
         # - placeholder
 
     # https://circleci.com/docs/2.0/configuration-reference/#available-machine-images
@@ -128,18 +129,13 @@ jobs:
           name: "AOSP dir"
           command: mkdir /home/circleci/aosp
 
-      # - run:
-      #     name: "Wait for SSH"
-      #     when: always
-      #     command: |
-      #       echo
-      #       i=0
-      #       while true; do
-      #         sleep 60
-      #         i=$((i+1))
-      #         echo "$i min"
-      #       done
-      #       /usr/bin/false
+      - run:
+          name: "[A] Disk usage (approx 5G)"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            echo
 
       # https://gist.github.com/earthgecko/3089509
       # https://superuser.com/questions/603547/how-can-i-limit-the-size-of-the-android-source-i-need-to-download-with-repo-syn
@@ -151,7 +147,7 @@ jobs:
       #     extract .repo w/ sync   10:34.70   .repo/  13G   ~/aosp/ 43G
       - run:
           name: "Download AOSP"
-          no_output_timeout: 60m
+          no_output_timeout: 1h
           working_directory: /home/circleci/aosp/
           command: |
             function A {
@@ -186,28 +182,56 @@ jobs:
             echo
             echo
 
-      - save_cache:
-          key: v1-.repo-{{ epoch }}
-          paths:
-            - /home/circleci/aosp/.repo/
+      - run:
+          name: "[B] Disk usage (approx 5G+15G+30G)"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            echo
 
       - run:
-          name: "Check size and remove .repo"
+          name: "Remove .repo"
           working_directory: /home/circleci/aosp/
           command: |
-            du -hd 0 .repo
-            du -bd 0 .repo
             rm -rf .repo
-            du -hd 0 .
-            du -bd 0 .
+
+      - run:
+          name: "[C] Disk usage (approx 5G+30G)"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            echo
+
+      - run:
+          name: "Zstd"
+          no_output_timeout: 1h
+          command: |
+            tar -c --zstd -f aosp.tar.zst aosp/
+
+      - run:
+          name: "[D] Disk usage (approx 5G+30G+?G)"
+          command: |
+            echo
+            sudo -i df -h
+            echo
+            echo
 
       - save_cache:
           key: v1-tree-{{ epoch }}
           paths:
-            - /home/circleci/aosp/
+            - /home/circleci/aosp.tar.zst
 
-      # https://circleci.com/docs/2.0/artifacts/#artifacts-overview
-      # - store_artifacts:
-      #     path: /nproc
-      # - store_artifacts:
-      #     path: /lscpu
+      # - run:
+      #     name: "Wait for SSH"
+      #     when: always
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
