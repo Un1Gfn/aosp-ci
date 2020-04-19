@@ -169,8 +169,8 @@ jobs:
             m droid
             ---
             chmod +x m.sh
-            # /usr/bin/timeout "$((3*60+30))m" ./m.sh || true
-            /usr/bin/timeout "$((10*1))m" ./m.sh || true
+            # /usr/bin/timeout "$((10*1))m" ./m.sh || true
+            /usr/bin/timeout "$((3*60+30))m" ./m.sh || true
 
       - run:
           name: "[C] Disk space"
