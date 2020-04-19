@@ -180,16 +180,12 @@ jobs:
             cat <<"---" >./m.sh
             #!/bin/bash
             source build/envsetup.sh
-            m help
-            m clean
-            # lunch
             lunch aosp_angler-userdebug
-            [ -z ${TOP+x} ] || exit 1
             m droid
             ---
             chmod +x m.sh
-            /usr/bin/timeout "$((10*1))m" ./m.sh || true
             # /usr/bin/timeout "$((3*60+30))m" ./m.sh || true
+            /usr/bin/timeout "$((10*1))m" ./m.sh || true
 
       - run:
           name: "[C] Disk space"
