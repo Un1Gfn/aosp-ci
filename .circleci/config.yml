@@ -73,6 +73,25 @@ jobs:
             sudo -i apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5DC22404A6F9F1CA
             $apt update
             $apt autoremove --purge
+            $apt install zstd
+            echo
+            zstd --version
+            tar --version
+            echo
+            echo
+
+      # - run:
+      #     name: "Wait for SSH"
+      #     when: always
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
 
       # https://unix.stackexchange.com/questions/410579/change-the-python3-default-version-in-ubuntu
       # https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa
@@ -206,8 +225,11 @@ jobs:
 
       - run:
           name: "Zstd"
+          working_directory: /home/circleci/aosp/
           no_output_timeout: 1h
-          command: tar -c --zstd -f aosp.tar.zst aosp/
+          command: |
+            tar cf - aosp/ | zstd >aosp.tar.zst
+            # zstdcat aosp.tar.zst | tar xf -
 
       - run:
           name: "[D] Disk usage (approx 5G+30G+?G)"
@@ -221,16 +243,3 @@ jobs:
           key: v1-tree-{{ epoch }}
           paths:
             - /home/circleci/aosp.tar.zst
-
-      # - run:
-      #     name: "Wait for SSH"
-      #     when: always
-      #     command: |
-      #       echo
-      #       i=0
-      #       while true; do
-      #         sleep 60
-      #         i=$((i+1))
-      #         echo "$i min"
-      #       done
-      #       /usr/bin/false
