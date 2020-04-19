@@ -25,11 +25,6 @@ jobs:
     steps:
 
       - run:
-          name: "Please build w/ SSH"
-          command: |
-            echo "Please build w/ SSH"
-
-      - run:
           name: "Remove bloat"
           working_directory: /opt/
           command: |
@@ -146,17 +141,31 @@ jobs:
             echo
 
       - run:
-          name: "Wait for SSH"
-          when: always
+          name: "Pack complete zstd"
+          working_directory: /home/circleci/
+          no_output_timeout: 1h
           command: |
-            echo
-            i=0
-            while true; do
-              sleep 60
-              i=$((i+1))
-              echo "$i min"
-            done
-            /usr/bin/false
+            tar cf - aosp/ | zstd >aosp.tar.zst
+            # zstdcat aosp.tar.zst | tar xf -
+            ls -lh aosp.tar.zst
+
+      - save_cache:
+          key: v1-complete-{{ epoch }}
+          paths:
+            - /home/circleci/aosp.tar.zst
+
+      # - run:
+      #     name: "Wait for SSH"
+      #     when: always
+      #     command: |
+      #       echo
+      #       i=0
+      #       while true; do
+      #         sleep 60
+      #         i=$((i+1))
+      #         echo "$i min"
+      #       done
+      #       /usr/bin/false
 
       # https://stackoverflow.com/questions/36949605/creating-flashable-zip-from-android-source-code
       # - run:
